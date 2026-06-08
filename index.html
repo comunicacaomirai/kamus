@@ -30,7 +30,7 @@
             padding: 2.5rem;
             border-radius: 16px;
             width: 100%;
-            max-width: 450px;
+            max-width: 480px;
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
         }
 
@@ -83,6 +83,11 @@
 
         .form-group {
             margin-bottom: 1.25rem;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 1rem;
         }
 
         label {
@@ -240,30 +245,56 @@
         <p class="subtitle">Acesso ao Ecossistema de Leads</p>
         
         <div class="tabs">
-            <button class="tab-btn active" id="tabLoginBtn">Entrar</button>
-            <button class="tab-btn" id="tabCadastroBtn">Cadastrar Agência</button>
+            <button class="tab-btn active" id="tabLoginBtn">ENTRAR</button>
+            <button class="tab-btn" id="tabCadastroBtn">CADASTRAR AGÊNCIA</button>
         </div>
 
-        <!-- FORMULÁRIO DE LOGIN -->
+        <!-- FORMULÁRIO DE LOGIN (CAMPOS: USUÁRIO E SENHA) -->
         <form id="loginForm">
             <div class="form-group">
-                <label for="loginId">Identificador (ID) da Agência:</label>
-                <input type="text" id="loginId" placeholder="Ex: mirai_turismo" required>
+                <label for="loginUser">Nome de Usuário:</label>
+                <input type="text" id="loginUser" placeholder="Digite seu usuário cadastrado" required>
+            </div>
+            <div class="form-group">
+                <label for="loginPassword">Senha:</label>
+                <input type="password" id="loginPassword" placeholder="Digite sua senha" required>
             </div>
             <button type="submit">Acessar Painel</button>
         </form>
 
-        <!-- FORMULÁRIO DE CADASTRO -->
+        <!-- FORMULÁRIO DE CADASTRO EXPANDIDO -->
         <form id="cadastroForm" class="hidden">
             <div class="form-group">
-                <label for="cadId">Criar ID único (sem espaços ou acentos):</label>
-                <input type="text" id="cadId" placeholder="Ex: pinhais_viagens" required>
+                <label for="cadNome">Nome da Agência:</label>
+                <input type="text" id="cadNome" placeholder="Ex: Mirai Comunicação" required>
+            </div>
+            <div class="form-row">
+                <div class="form-group" style="flex: 1;">
+                    <label for="cadCnpj">CNPJ:</label>
+                    <input type="text" id="cadCnpj" placeholder="00.000.000/0001-00" required>
+                </div>
+                <div class="form-group" style="flex: 1;">
+                    <label for="cadWhatsapp">WhatsApp:</label>
+                    <input type="tel" id="cadWhatsapp" placeholder="(00) 00000-0000" required>
+                </div>
             </div>
             <div class="form-group">
-                <label for="cadNome">Nome da Agência:</label>
-                <input type="text" id="cadNome" placeholder="Ex: Pinhais Viagens Ltda" required>
+                <label for="cadEmail">E-mail Corporativo:</label>
+                <input type="email" id="cadEmail" placeholder="contato@suaagencia.com" required>
             </div>
-            <p style="font-size: 0.8rem; color: #38bdf8; text-align: center;">* Novos cadastros iniciam com 10 créditos cortesia.</p>
+            <div class="form-row">
+                <div class="form-group" style="flex: 1;">
+                    <label for="cadUser">Nome de Usuário:</label>
+                    <input type="text" id="cadUser" placeholder="Ex: mirai_admin" required>
+                </div>
+                <div class="form-group" style="flex: 1;">
+                    <label for="cadPassword">Senha:</label>
+                    <input type="password" id="cadPassword" placeholder="Crie uma senha" required>
+                </div>
+            </div>
+            <p style="font-size: 0.8rem; color: #38bdf8; text-align: center; margin-top: 0.5rem;">
+                * Sincronização automatizada com Google Sheets ativa.
+            </p>
             <button type="submit" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">Finalizar Registro</button>
         </form>
     </div>
@@ -293,6 +324,10 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, set, onValue, update, get, child } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        // CONFIGURAÇÃO DO SEU WEBHOOK DO GOOGLE SHEETS
+        // Insira a URL do seu Google Apps Script, Make (Integromat) ou n8n aqui embaixo:
+        const URL_WEBHOOK_GOOGLE_SHEETS = "SUA_URL_DO_WEBHOOK_AQUI";
 
         // Credenciais reais do seu projeto do Firebase
         const firebaseConfig = {
@@ -350,58 +385,92 @@
             loginForm.classList.add('hidden');
         });
 
-        // Evento de Cadastro Real no Firebase
-        cadastroForm.addEventListener('submit', (e) => {
+        // Evento de Cadastro Real (Firebase + Google Sheets)
+        cadastroForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const id = document.getElementById('cadId').value.trim().toLowerCase();
-            const nome = document.getElementById('cadNome').value.trim();
+            
+            const nomeAgencia = document.getElementById('cadNome').value.trim();
+            const cnpj = document.getElementById('cadCnpj').value.trim();
+            const whatsapp = document.getElementById('cadWhatsapp').value.trim();
+            const email = document.getElementById('cadEmail').value.trim();
+            const usuario = document.getElementById('cadUser').value.trim().toLowerCase().replace(/\s+/g, '');
+            const senha = document.getElementById('cadPassword').value;
 
-            if (!id || !nome) return;
+            if (!usuario || !senha || !nomeAgencia) return;
 
-            // Verifica primeiro se a agência já existe
+            // Objeto estruturado com todos os dados coletados
+            const dadosAgencia = {
+                id: usuario, // O próprio nome de usuário único serve como chave primária identificadora
+                nome: nomeAgencia,
+                cnpj: cnpj,
+                whatsapp: whatsapp,
+                email: email,
+                usuario: usuario,
+                senha: senha,
+                creditos: 10 // Cortesia padrão inicial
+            };
+
             const dbRef = ref(getDatabase());
-            get(child(dbRef, `guia_viajante_42/agencias/${id}`)).then((snapshot) => {
+            try {
+                // 1. Verifica duplicidade de usuário no banco de dados
+                const snapshot = await get(child(dbRef, `guia_viajante_42/agencias/${usuario}`));
+                
                 if (snapshot.exists()) {
-                    alert('Este ID de agência já está cadastrado. Escolha outro.');
-                } else {
-                    // Grava a nova agência com 10 créditos iniciais no banco
-                    set(ref(db, `guia_viajante_42/agencias/${id}`), {
-                        id: id,
-                        nome: nome,
-                        creditos: 10
-                    }).then(() => {
-                        alert(`Agência "${nome}" cadastrada com sucesso! Agora vá para a aba Entrar.`);
-                        cadastroForm.reset();
-                        tabLoginBtn.click(); // Alterna visualmente para a aba login
-                        document.getElementById('loginId').value = id;
-                    });
+                    alert('Este Nome de Usuário já está em uso. Por favor, escolha outro.');
+                    return;
                 }
-            }).catch((error) => {
+
+                // 2. Grava no Firebase Realtime Database
+                await set(ref(db, `guia_viajante_42/agencias/${usuario}`), dadosAgencia);
+
+                // 3. Dispara a gravação em segundo plano para a sua Google Sheets
+                if (URL_WEBHOOK_GOOGLE_SHEETS && URL_WEBHOOK_GOOGLE_SHEETS !== "SUA_URL_DO_WEBHOOK_AQUI") {
+                    fetch(URL_WEBHOOK_GOOGLE_SHEETS, {
+                        method: 'POST',
+                        mode: 'no-cors', // Evita problemas de CORS comuns ao disparar para scripts do google
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(dadosAgencia)
+                    }).catch(err => console.error("Erro ao espelhar no Sheets: ", err));
+                }
+
+                alert(`Agência "${nomeAgencia}" registrada com sucesso!`);
+                cadastroForm.reset();
+                tabLoginBtn.click();
+                document.getElementById('loginUser').value = usuario;
+
+            } catch (error) {
                 console.error(error);
-                alert('Erro ao conectar ao Firebase.');
-            });
+                alert('Ocorreu um erro no processamento do cadastro.');
+            }
         });
 
-        // Evento de Login Real no Firebase
+        // Evento de Login Real com Validação de Usuário e Senha
         loginForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            const id = document.getElementById('loginId').value.trim().toLowerCase();
+            const user = document.getElementById('loginUser').value.trim().toLowerCase();
+            const pass = document.getElementById('loginPassword').value;
 
             const dbRef = ref(getDatabase());
-            get(child(dbRef, `guia_viajante_42/agencias/${id}`)).then((snapshot) => {
+            get(child(dbRef, `guia_viajante_42/agencias/${user}`)).then((snapshot) => {
                 if (snapshot.exists()) {
-                    LoggedAgenciaId = id;
-                    authContainer.classList.add('hidden');
-                    painelAquario.classList.remove('hidden');
+                    const dadosAgenciaNoBanco = snapshot.val();
                     
-                    // Conecta ao listener em tempo real
-                    conectarAoFirebaseRealtime();
+                    // Validação de segurança básica da senha associada
+                    if (dadosAgenciaNoBanco.senha === pass) {
+                        LoggedAgenciaId = user;
+                        authContainer.classList.add('hidden');
+                        painelAquario.classList.remove('hidden');
+                        
+                        conectarAoFirebaseRealtime();
+                    } else {
+                        alert('Senha incorreta! Tente novamente.');
+                    }
                 } else {
-                    alert('ID de Agência não encontrado! Cadastre-o na aba ao lado primeiro.');
+                    alert('Usuário não encontrado! Verifique os dados ou realize o cadastro.');
                 }
             }).catch((error) => {
                 console.error(error);
-                alert('Erro ao autenticar.');
+                alert('Falha na comunicação com o servidor de autenticação.');
             });
         });
 
@@ -414,11 +483,9 @@
         function conectarAoFirebaseRealtime() {
             const dbRef = ref(db, 'guia_viajante_42');
 
-            // Escuta ativa em tempo real de todo o nó do projeto
             onValue(dbRef, (snapshot) => {
                 const data = snapshot.val();
                 
-                // Se o nó de leads estiver ausente, injeta os 6 modelos iniciais mantendo as agências salvas
                 if (!data || !data.leads) {
                     set(ref(db, 'guia_viajante_42/leads'), leadsIniciais);
                     return;
@@ -430,7 +497,6 @@
         }
 
         function renderizarPainelRealtime() {
-            // Puxa as informações da agência logada diretamente do snapshot do Firebase
             const infoAgencia = dadosLocais.agencias ? dadosLocais.agencias[LoggedAgenciaId] : null;
             
             if (infoAgencia) {
@@ -438,7 +504,6 @@
                 txtCreditos.textContent = infoAgencia.creditos;
             }
 
-            // Limpa e reconstrói o grid de leads
             aquarioLeads.innerHTML = "";
 
             Object.keys(dadosLocais.leads).forEach(key => {
@@ -449,19 +514,15 @@
                 let htmlAcoes = '';
 
                 if (!lead.comprador || lead.comprador === "") {
-                    // Estado: Livre para compra
                     htmlAcoes = `<button class="btn-pescar" data-id="${lead.id}">PESCAR LEAD (1 CRÉDITO)</button>`;
                 } else {
-                    // Estado: Já pescado
                     card.classList.add('atendido');
 
                     if (lead.comprador === LoggedAgenciaId) {
-                        // Se a agência ativa comprou: revela e mostra o link do WhatsApp
                         card.classList.add('revelado');
                         const msg = encodeURIComponent(`Olá ${lead.nome}, recebemos seu pedido de cotação para ${lead.destino} no Guia do Viajante! Vamos planejar?`);
                         htmlAcoes = `<button class="btn-whatsapp" onclick="window.open('https://wa.me/${lead.whatsapp}?text=${msg}', '_blank')">💬 CHAMAR NO WHATSAPP</button>`;
                     } else {
-                        // Se outra agência qualquer do banco comprou: bloqueia
                         htmlAcoes = `<button class="btn-inativo" disabled>⚠️ EM ATENDIMENTO POR OUTRA AGÊNCIA</button>`;
                     }
                 }
@@ -479,7 +540,6 @@
                 aquarioLeads.appendChild(card);
             });
 
-            // Reatribui os gatilhos dos botões de compra
             document.querySelectorAll('.btn-pescar').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const idLead = e.target.getAttribute('data-id');
@@ -488,22 +548,18 @@
             });
         }
 
-        // Realiza o desconto atômico do crédito e vinculação do comprador no Firebase
         window.pescarLeadNoFirebase = function(idLead) {
-            const agenciaAtual = dadosLocais.agencias[LoggedAgenciaId];
+            const SampleAgenciaId = dadosLocais.agencias[LoggedAgenciaId];
             
-            if (!agenciaAtual || agenciaAtual.creditos <= 0) {
+            if (!SampleAgenciaId || SampleAgenciaId.creditos <= 0) {
                 alert('Você não possui créditos suficientes para realizar esta pescaria!');
                 return;
             }
 
             const updates = {};
-            // Registra quem comprou o lead
             updates[`guia_viajante_42/leads/${idLead}/comprador`] = LoggedAgenciaId;
-            // Desconta o crédito da agência logada direto no servidor
-            updates[`guia_viajante_42/agencias/${LoggedAgenciaId}/creditos`] = agenciaAtual.creditos - 1;
+            updates[`guia_viajante_42/agencias/${LoggedAgenciaId}/creditos`] = SampleAgenciaId.creditos - 1;
 
-            // Salva as alterações
             update(ref(db), updates);
         }
     </script>
