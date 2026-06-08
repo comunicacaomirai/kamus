@@ -49,7 +49,36 @@
             font-size: 0.95rem;
             color: #94a3b8;
             text-align: center;
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            background: #0f172a;
+            padding: 4px;
+            border-radius: 8px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 0.5rem;
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            font-weight: 500;
+            font-size: 0.9rem;
+            cursor: pointer;
+            border-radius: 6px;
+            margin: 0;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background: #1e293b;
+            color: #38bdf8;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
         }
 
         .form-group {
@@ -205,23 +234,41 @@
 </head>
 <body>
 
-    <!-- CONTAINER DE LOGIN SIMPLIFICADO -->
+    <!-- PORTAL DE ACESSO (LOGIN / CADASTRO) -->
     <div class="container" id="authContainer">
         <h1>Guia do Viajante 42</h1>
-        <p class="subtitle">Entrar no Aquário Realtime</p>
+        <p class="subtitle">Acesso ao Ecossistema de Leads</p>
+        
+        <div class="tabs">
+            <button class="tab-btn active" id="tabLoginBtn">Entrar</button>
+            <button class="tab-btn" id="tabCadastroBtn">Cadastrar Agência</button>
+        </div>
+
+        <!-- FORMULÁRIO DE LOGIN -->
         <form id="loginForm">
             <div class="form-group">
-                <label for="loginUser">Selecione uma Agência para o teste:</label>
-                <select id="loginUser">
-                    <option value="ficticia_a">Agência Fictícia A</option>
-                    <option value="ficticia_b">Agência Fictícia B</option>
-                </select>
+                <label for="loginId">Identificador (ID) da Agência:</label>
+                <input type="text" id="loginId" placeholder="Ex: mirai_turismo" required>
             </div>
             <button type="submit">Acessar Painel</button>
         </form>
+
+        <!-- FORMULÁRIO DE CADASTRO -->
+        <form id="cadastroForm" class="hidden">
+            <div class="form-group">
+                <label for="cadId">Criar ID único (sem espaços ou acentos):</label>
+                <input type="text" id="cadId" placeholder="Ex: pinhais_viagens" required>
+            </div>
+            <div class="form-group">
+                <label for="cadNome">Nome da Agência:</label>
+                <input type="text" id="cadNome" placeholder="Ex: Pinhais Viagens Ltda" required>
+            </div>
+            <p style="font-size: 0.8rem; color: #38bdf8; text-align: center;">* Novos cadastros iniciam com 10 créditos cortesia.</p>
+            <button type="submit" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">Finalizar Registro</button>
+        </form>
     </div>
 
-    <!-- TELA DO PAINEL -->
+    <!-- TELA DO PAINEL DO AQUÁRIO -->
     <div class="painel-container hidden" id="painelAquario">
         <div class="painel-header">
             <div>
@@ -230,9 +277,9 @@
             </div>
             <div class="header-meta">
                 <div class="simulador-box">
-                    <label>🏢 Simulando: <strong id="lblAgenciaLogada" style="color:#38bdf8;">-</strong></label>
+                    <label>🏢 Agência Ativa: <strong id="lblAgenciaLogada" style="color:#38bdf8;">-</strong></label>
                 </div>
-                <div class="badge-creditos">🪙 Créditos da Empresa: <span id="txtCreditos">10</span></div>
+                <div class="badge-creditos">🪙 Seus Créditos: <span id="txtCreditos">0</span></div>
                 <button id="btnSair" style="width: auto; padding: 0.5rem 1rem; background: #334155; margin: 0;">Sair</button>
             </div>
         </div>
@@ -245,7 +292,7 @@
     <!-- Importação dos módulos do Firebase (v10+) via CDN -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getDatabase, ref, set, onValue, update, get, child } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
         // Credenciais reais do seu projeto do Firebase
         const firebaseConfig = {
@@ -263,61 +310,117 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // Modelos iniciais com 6 leads no total e controle de créditos puramente local para este teste visual
-        const dadosIniciaisIniciais = {
-            leads: {
-                lead1: { id: "lead1", destino: "Gramado / RS", nome: "Carlos", sobrenome: "Silva", whatsapp: "5541991234567", passageiros: "Casal (2 pessoas)", data: "Julho de 2026", orcamento: "Até R$ 3.000", comprador: "" },
-                lead2: { id: "lead2", destino: "Porto de Galinhas / PE", nome: "Mariana", sobrenome: "Costa", whatsapp: "5511987654321", passageiros: "Família (4 pessoas)", data: "Outubro de 2026", orcamento: "Até R$ 7.500", comprador: "" },
-                lead3: { id: "lead3", destino: "Paris / França", nome: "Rodrigo", sobrenome: "Almeida", whatsapp: "5521999887766", passageiros: "1 pessoa", data: "Dezembro de 2026", orcamento: "Até R$ 12.000", comprador: "" },
-                lead4: { id: "lead4", destino: "Orlando / EUA (Disney)", nome: "Beatriz", sobrenome: "Oliveira", whatsapp: "5531988776655", passageiros: "Família (3 pessoas)", data: "Janeiro de 2027", orcamento: "Até R$ 20.000", comprador: "" },
-                lead5: { id: "lead5", destino: "Natal / RN", nome: "Fernando", sobrenome: "Santos", whatsapp: "5581977665544", passageiros: "Casal (2 pessoas)", data: "Novembro de 2026", orcamento: "Até R$ 4.500", comprador: "" },
-                lead6: { id: "lead6", destino: "Machu Picchu / Peru", nome: "Camila", sobrenome: "Ribeiro", whatsapp: "5519966554433", passageiros: "Grupo (3 amigos)", data: "Setembro de 2026", orcamento: "Até R$ 6.000", comprador: "" }
-            }
+        // Modelos base de leads (serão criados apenas se o banco de dados estiver completamente vazio)
+        const leadsIniciais = {
+            lead1: { id: "lead1", destino: "Gramado / RS", nome: "Carlos", sobrenome: "Silva", whatsapp: "5541991234567", passageiros: "Casal (2 pessoas)", data: "Julho de 2026", orcamento: "Até R$ 3.000", comprador: "" },
+            lead2: { id: "lead2", destino: "Porto de Galinhas / PE", nome: "Mariana", sobrenome: "Costa", whatsapp: "5511987654321", passageiros: "Família (4 pessoas)", data: "Outubro de 2026", orcamento: "Até R$ 7.500", comprador: "" },
+            lead3: { id: "lead3", destino: "Paris / França", nome: "Rodrigo", sobrenome: "Almeida", whatsapp: "5521999887766", passageiros: "1 pessoa", data: "Dezembro de 2026", orcamento: "Até R$ 12.000", comprador: "" },
+            lead4: { id: "lead4", destino: "Orlando / EUA (Disney)", nome: "Beatriz", sobrenome: "Oliveira", whatsapp: "5531988776655", passageiros: "Família (3 pessoas)", data: "Janeiro de 2027", orcamento: "Até R$ 20.000", comprador: "" },
+            lead5: { id: "lead5", destino: "Natal / RN", nome: "Fernando", sobrenome: "Santos", whatsapp: "5581977665544", passageiros: "Casal (2 pessoas)", data: "Novembro de 2026", orcamento: "Até R$ 4.500", comprador: "" },
+            lead6: { id: "lead6", destino: "Machu Picchu / Peru", nome: "Camila", sobrenome: "Ribeiro", whatsapp: "5519966554433", passageiros: "Grupo (3 amigos)", data: "Setembro de 2026", orcamento: "Até R$ 6.000", comprador: "" }
         };
 
-        let SampleAgenciaId = "ficticia_a";
+        let LoggedAgenciaId = "";
         let dadosLocais = {};
-        
-        // Simulação de créditos local por aba para o teste visual fazer sentido sem o nó global de agências
-        let creditosSimulados = {
-            ficticia_a: 10,
-            ficticia_b: 10
-        };
 
         // Elementos do DOM
         const authContainer = document.getElementById('authContainer');
         const painelAquario = document.getElementById('painelAquario');
         const loginForm = document.getElementById('loginForm');
+        const cadastroForm = document.getElementById('cadastroForm');
         const aquarioLeads = document.getElementById('aquarioLeads');
         const txtCreditos = document.getElementById('txtCreditos');
         const lblAgenciaLogada = document.getElementById('lblAgenciaLogada');
+        
+        const tabLoginBtn = document.getElementById('tabLoginBtn');
+        const tabCadastroBtn = document.getElementById('tabCadastroBtn');
 
-        // Login simples para teste de tela
+        // Alternância de Abas (Login / Cadastro)
+        tabLoginBtn.addEventListener('click', () => {
+            tabLoginBtn.classList.add('active');
+            tabCadastroBtn.classList.remove('active');
+            loginForm.classList.remove('hidden');
+            cadastroForm.classList.add('hidden');
+        });
+
+        tabCadastroBtn.addEventListener('click', () => {
+            tabCadastroBtn.classList.add('active');
+            tabLoginBtn.classList.remove('active');
+            cadastroForm.classList.remove('hidden');
+            loginForm.classList.add('hidden');
+        });
+
+        // Evento de Cadastro Real no Firebase
+        cadastroForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const id = document.getElementById('cadId').value.trim().toLowerCase();
+            const nome = document.getElementById('cadNome').value.trim();
+
+            if (!id || !nome) return;
+
+            // Verifica primeiro se a agência já existe
+            const dbRef = ref(getDatabase());
+            get(child(dbRef, `guia_viajante_42/agencias/${id}`)).then((snapshot) => {
+                if (snapshot.exists()) {
+                    alert('Este ID de agência já está cadastrado. Escolha outro.');
+                } else {
+                    // Grava a nova agência com 10 créditos iniciais no banco
+                    set(ref(db, `guia_viajante_42/agencias/${id}`), {
+                        id: id,
+                        nome: nome,
+                        creditos: 10
+                    }).then(() => {
+                        alert(`Agência "${nome}" cadastrada com sucesso! Agora vá para a aba Entrar.`);
+                        cadastroForm.reset();
+                        tabLoginBtn.click(); // Alterna visualmente para a aba login
+                        document.getElementById('loginId').value = id;
+                    });
+                }
+            }).catch((error) => {
+                console.error(error);
+                alert('Erro ao conectar ao Firebase.');
+            });
+        });
+
+        // Evento de Login Real no Firebase
         loginForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            SampleAgenciaId = document.getElementById('loginUser').value;
-            authContainer.classList.add('hidden');
-            painelAquario.classList.remove('hidden');
-            
-            // Inicia a escuta ativa do Firebase Realtime
-            conectarAoFirebase();
+            const id = document.getElementById('loginId').value.trim().toLowerCase();
+
+            const dbRef = ref(getDatabase());
+            get(child(dbRef, `guia_viajante_42/agencias/${id}`)).then((snapshot) => {
+                if (snapshot.exists()) {
+                    LoggedAgenciaId = id;
+                    authContainer.classList.add('hidden');
+                    painelAquario.classList.remove('hidden');
+                    
+                    // Conecta ao listener em tempo real
+                    conectarAoFirebaseRealtime();
+                } else {
+                    alert('ID de Agência não encontrado! Cadastre-o na aba ao lado primeiro.');
+                }
+            }).catch((error) => {
+                console.error(error);
+                alert('Erro ao autenticar.');
+            });
         });
 
         document.getElementById('btnSair').addEventListener('click', () => {
             painelAquario.classList.add('hidden');
             authContainer.classList.remove('hidden');
+            loginForm.reset();
         });
 
-        function conectarAoFirebase() {
+        function conectarAoFirebaseRealtime() {
             const dbRef = ref(db, 'guia_viajante_42');
 
-            // Escuta ativa em tempo real
+            // Escuta ativa em tempo real de todo o nó do projeto
             onValue(dbRef, (snapshot) => {
                 const data = snapshot.val();
                 
-                // Popula o banco com os 6 modelos se estiver zerado
+                // Se o nó de leads estiver ausente, injeta os 6 modelos iniciais mantendo as agências salvas
                 if (!data || !data.leads) {
-                    set(dbRef, dadosIniciaisIniciais);
+                    set(ref(db, 'guia_viajante_42/leads'), leadsIniciais);
                     return;
                 }
 
@@ -327,14 +430,17 @@
         }
 
         function renderizarPainelRealtime() {
-            // Atualiza cabeçalho
-            lblAgenciaLogada.textContent = SampleAgenciaId === "ficticia_a" ? "Agência Fictícia A" : "Agência Fictícia B";
-            txtCreditos.textContent = creditosSimulados[SampleAgenciaId];
+            // Puxa as informações da agência logada diretamente do snapshot do Firebase
+            const infoAgencia = dadosLocais.agencias ? dadosLocais.agencias[LoggedAgenciaId] : null;
+            
+            if (infoAgencia) {
+                lblAgenciaLogada.textContent = infoAgencia.nome;
+                txtCreditos.textContent = infoAgencia.creditos;
+            }
 
-            // Limpa o grid de cards
+            // Limpa e reconstrói o grid de leads
             aquarioLeads.innerHTML = "";
 
-            // Cria os cards dinamicamente
             Object.keys(dadosLocais.leads).forEach(key => {
                 const lead = dadosLocais.leads[key];
                 const card = document.createElement('div');
@@ -343,19 +449,19 @@
                 let htmlAcoes = '';
 
                 if (!lead.comprador || lead.comprador === "") {
-                    // Estado: Livre para compra (Card Verde)
+                    // Estado: Livre para compra
                     htmlAcoes = `<button class="btn-pescar" data-id="${lead.id}">PESCAR LEAD (1 CRÉDITO)</button>`;
                 } else {
-                    // Estado: Já pescado (Card Amarelo/Laranja)
+                    // Estado: Já pescado
                     card.classList.add('atendido');
 
-                    if (lead.comprador === SampleAgenciaId) {
-                        // Se você comprou: Revela as informações borradas
+                    if (lead.comprador === LoggedAgenciaId) {
+                        // Se a agência ativa comprou: revela e mostra o link do WhatsApp
                         card.classList.add('revelado');
                         const msg = encodeURIComponent(`Olá ${lead.nome}, recebemos seu pedido de cotação para ${lead.destino} no Guia do Viajante! Vamos planejar?`);
                         htmlAcoes = `<button class="btn-whatsapp" onclick="window.open('https://wa.me/${lead.whatsapp}?text=${msg}', '_blank')">💬 CHAMAR NO WHATSAPP</button>`;
                     } else {
-                        // Se outra agência comprou: Bloqueia totalmente
+                        // Se outra agência qualquer do banco comprou: bloqueia
                         htmlAcoes = `<button class="btn-inativo" disabled>⚠️ EM ATENDIMENTO POR OUTRA AGÊNCIA</button>`;
                     }
                 }
@@ -373,7 +479,7 @@
                 aquarioLeads.appendChild(card);
             });
 
-            // Atribui os eventos de clique
+            // Reatribui os gatilhos dos botões de compra
             document.querySelectorAll('.btn-pescar').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const idLead = e.target.getAttribute('data-id');
@@ -382,20 +488,22 @@
             });
         }
 
-        // Grava a pescaria no Firebase
+        // Realiza o desconto atômico do crédito e vinculação do comprador no Firebase
         window.pescarLeadNoFirebase = function(idLead) {
-            if (creditosSimulados[SampleAgenciaId] <= 0) {
-                alert('Seu saldo fictício de créditos acabou!');
+            const agenciaAtual = dadosLocais.agencias[LoggedAgenciaId];
+            
+            if (!agenciaAtual || agenciaAtual.creditos <= 0) {
+                alert('Você não possui créditos suficientes para realizar esta pescaria!');
                 return;
             }
 
-            // Deduz o crédito localmente na aba de testes
-            creditosSimulados[SampleAgenciaId] -= 1;
-
             const updates = {};
-            updates[`guia_viajante_42/leads/${idLead}/comprador`] = SampleAgenciaId;
+            // Registra quem comprou o lead
+            updates[`guia_viajante_42/leads/${idLead}/comprador`] = LoggedAgenciaId;
+            // Desconta o crédito da agência logada direto no servidor
+            updates[`guia_viajante_42/agencias/${LoggedAgenciaId}/creditos`] = agenciaAtual.creditos - 1;
 
-            // Envia ao servidor
+            // Salva as alterações
             update(ref(db), updates);
         }
     </script>
