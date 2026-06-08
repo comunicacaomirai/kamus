@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guia do Viajante 42 - Painel do Agente</title>
+    <style>
+        /* --- Configurações Globais & Paleta Azul Escuro --- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: radial-gradient(circle at top, #1e293b 0%, #0f172a 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #f8fafc;
+        }
+
+        .container {
+            background-color: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 2.5rem;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 450px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+            transition: max-width 0.3s ease;
+        }
+
+        /* Responsividade para o formulário de cadastro que é maior */
+        .container.expanded {
+            max-width: 550px;
+        }
+
+        /* --- Tipografia --- */
+        h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(to right, #38bdf8, #0ea5e9);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .subtitle {
+            font-size: 0.95rem;
+            color: #94a3b8;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        /* --- Formulários e Inputs --- */
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        /* Layout em duas colunas para o cadastro ficar compacto */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .form-grid .form-group {
+            margin-bottom: 0.5rem;
+        }
+
+        .form-grid .full-width {
+            grid-column: span 2;
+            margin-bottom: 0.5rem;
+        }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            color: #94a3b8;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background-color: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            color: #f8fafc;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #38bdf8;
+            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+        }
+
+        /* --- Botões e Links --- */
+        button {
+            width: 100%;
+            padding: 0.75rem;
+            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-top: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(14, 165, 233, 0.2);
+        }
+
+        button:hover {
+            opacity: 0.95;
+            transform: translateY(-1px);
+            box-shadow: 0 10px 15px -3px rgba(14, 165, 233, 0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .toggle-link {
+            text-align: center;
+            margin-top: 1.5rem;
+            font-size: 0.9rem;
+            color: #94a3b8;
+        }
+
+        .toggle-link span {
+            color: #38bdf8;
+            text-decoration: none;
+            cursor: pointer;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+
+        .toggle-link span:hover {
+            color: #7dd3fc;
+            text-decoration: underline;
+        }
+
+        /* --- Controle de Telas (Hidden) --- */
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container" id="formContainer">
+        <h1>Guia do Viajante 42</h1>
+        <p class="subtitle" id="formSubtitle">Painel de Agências Parceiras</p>
+
+        <!-- ================= TELA DE LOGIN ================= -->
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="loginUser">Nome de Usuário ou E-mail</label>
+                <input type="text" id="loginUser" placeholder="Ex: miraiturismo" required autocomplete="username">
+            </div>
+            
+            <div class="form-group">
+                <label for="loginPassword">Senha</label>
+                <input type="password" id="loginPassword" placeholder="••••••••" required autocomplete="current-password">
+            </div>
+
+            <button type="submit">Entrar no Aquário</button>
+            
+            <div class="toggle-link">
+                Não tem acesso? <span id="btnIrParaCadastro">Fazer cadastro</span>
+            </div>
+        </form>
+
+        <!-- ================= TELA DE CADASTRO ================= -->
+        <form id="registerForm" class="hidden">
+            <div class="form-grid">
+                <div class="form-group full-width">
+                    <label for="regNomeEmpresa">Nome da Empresa</label>
+                    <input type="text" id="regNomeEmpresa" placeholder="Nome Comercial da Agência" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="regCNPJ">CNPJ</label>
+                    <input type="text" id="regCNPJ" placeholder="00.000.000/0001-00" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="regWhatsapp">WhatsApp (com DDD)</label>
+                    <input type="tel" id="regWhatsapp" placeholder="41999999999" required>
+                </div>
+
+                <div class="form-group full-width">
+                    <label for="regEmail">E-mail Corporativo</label>
+                    <input type="email" id="regEmail" placeholder="contato@suaempresa.com" required autocomplete="email">
+                </div>
+
+                <div class="form-group">
+                    <label for="regUsername">Nome de Usuário</label>
+                    <input type="text" id="regUsername" placeholder="Ex: miraiturismo" required autocomplete="username">
+                </div>
+
+                <div class="form-group">
+                    <label for="regPassword">Senha de Acesso</label>
+                    <input type="password" id="regPassword" placeholder="••••••••" required autocomplete="new-password">
+                </div>
+            </div>
+
+            <button type="submit">Solicitar Cadastro</button>
+            
+            <div class="toggle-link">
+                Já possui uma conta? <span id="btnIrParaLogin">Fazer login</span>
+            </div>
+        </form>
+    </div>
+
+    <!-- --- Lógica de Transição de Telas --- -->
+    <script>
+        const container = document.getElementById('formContainer');
+        const subtitle = document.getElementById('formSubtitle');
+        const loginForm = document.getElementById('loginForm');
+        const registerForm = document.getElementById('registerForm');
+        
+        const btnIrParaCadastro = document.getElementById('btnIrParaCadastro');
+        const btnIrParaLogin = document.getElementById('btnIrParaLogin');
+
+        // Transição para a tela de Cadastro
+        btnIrParaCadastro.addEventListener('click', () => {
+            loginForm.classList.add('hidden');
+            registerForm.classList.remove('hidden');
+            container.classList.add('expanded');
+            subtitle.textContent = 'Crie a sua conta para acessar os leads';
+        });
+
+        // Transição para a tela de Login
+        btnIrParaLogin.addEventListener('click', () => {
+            registerForm.classList.add('hidden');
+            loginForm.classList.remove('hidden');
+            container.classList.remove('expanded');
+            subtitle.textContent = 'Painel de Agências Parceiras';
+        });
+
+        // Interceptação dos Envios (Prevenção do F5 para os futuros nós do Firebase)
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            console.log('Login submetido. Pronto para acenar para o Firebase Auth.');
+        });
+
+        registerForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            console.log('Cadastro submetido. Pronto para salvar dados da agência no Firestore.');
+        });
+    </script>
+</body>
+</html>
