@@ -211,10 +211,10 @@
         <p class="subtitle">Entrar no Aquário Realtime</p>
         <form id="loginForm">
             <div class="form-group">
-                <label for="loginUser">Selecione sua Agência para o teste:</label>
+                <label for="loginUser">Selecione uma Agência para o teste:</label>
                 <select id="loginUser">
-                    <option value="agencia1">Mirai Turismo (Agência A)</option>
-                    <option value="agencia2">Pinhais Viagens (Agência B)</option>
+                    <option value="ficticia_a">Agência Fictícia A</option>
+                    <option value="ficticia_b">Agência Fictícia B</option>
                 </select>
             </div>
             <button type="submit">Acessar Painel</button>
@@ -230,7 +230,7 @@
             </div>
             <div class="header-meta">
                 <div class="simulador-box">
-                    <label>🏢 Logado como: <strong id="lblAgenciaLogada" style="color:#38bdf8;">-</strong></label>
+                    <label>🏢 Simulando: <strong id="lblAgenciaLogada" style="color:#38bdf8;">-</strong></label>
                 </div>
                 <div class="badge-creditos">🪙 Créditos da Empresa: <span id="txtCreditos">10</span></div>
                 <button id="btnSair" style="width: auto; padding: 0.5rem 1rem; background: #334155; margin: 0;">Sair</button>
@@ -263,20 +263,26 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // Estrutura de simulação para resetar/criar os dados caso o banco comece vazio
+        // Modelos iniciais com 6 leads no total e controle de créditos puramente local para este teste visual
         const dadosIniciaisIniciais = {
-            agencias: {
-                agencia1: { nome: "Mirai Turismo", creditos: 10 },
-                agencia2: { nome: "Pinhais Viagens", creditos: 10 }
-            },
             leads: {
                 lead1: { id: "lead1", destino: "Gramado / RS", nome: "Carlos", sobrenome: "Silva", whatsapp: "5541991234567", passageiros: "Casal (2 pessoas)", data: "Julho de 2026", orcamento: "Até R$ 3.000", comprador: "" },
-                lead2: { id: "lead2", destino: "Porto de Galinhas / PE", nome: "Mariana", sobrenome: "Costa", whatsapp: "5511987654321", passageiros: "Família (4 pessoas)", data: "Outubro de 2026", orcamento: "Até R$ 7.500", comprador: "" }
+                lead2: { id: "lead2", destino: "Porto de Galinhas / PE", nome: "Mariana", sobrenome: "Costa", whatsapp: "5511987654321", passageiros: "Família (4 pessoas)", data: "Outubro de 2026", orcamento: "Até R$ 7.500", comprador: "" },
+                lead3: { id: "lead3", destino: "Paris / França", nome: "Rodrigo", sobrenome: "Almeida", whatsapp: "5521999887766", passageiros: "1 pessoa", data: "Dezembro de 2026", orcamento: "Até R$ 12.000", comprador: "" },
+                lead4: { id: "lead4", destino: "Orlando / EUA (Disney)", nome: "Beatriz", sobrenome: "Oliveira", whatsapp: "5531988776655", passageiros: "Família (3 pessoas)", data: "Janeiro de 2027", orcamento: "Até R$ 20.000", comprador: "" },
+                lead5: { id: "lead5", destino: "Natal / RN", nome: "Fernando", sobrenome: "Santos", whatsapp: "5581977665544", passageiros: "Casal (2 pessoas)", data: "Novembro de 2026", orcamento: "Até R$ 4.500", comprador: "" },
+                lead6: { id: "lead6", destino: "Machu Picchu / Peru", nome: "Camila", sobrenome: "Ribeiro", whatsapp: "5519966554433", passageiros: "Grupo (3 amigos)", data: "Setembro de 2026", orcamento: "Até R$ 6.000", comprador: "" }
             }
         };
 
-        let SampleAgenciaId = "agencia1";
+        let SampleAgenciaId = "ficticia_a";
         let dadosLocais = {};
+        
+        // Simulação de créditos local por aba para o teste visual fazer sentido sem o nó global de agências
+        let creditosSimulados = {
+            ficticia_a: 10,
+            ficticia_b: 10
+        };
 
         // Elementos do DOM
         const authContainer = document.getElementById('authContainer');
@@ -305,12 +311,12 @@
         function conectarAoFirebase() {
             const dbRef = ref(db, 'guia_viajante_42');
 
-            // Escuta em tempo real: roda no load e SEMPRE que qualquer dado mudar no servidor
+            // Escuta ativa em tempo real
             onValue(dbRef, (snapshot) => {
                 const data = snapshot.val();
                 
-                // Popula o banco com dados iniciais se ele estiver zerado
-                if (!data) {
+                // Popula o banco com os 6 modelos se estiver zerado
+                if (!data || !data.leads) {
                     set(dbRef, dadosIniciaisIniciais);
                     return;
                 }
@@ -321,15 +327,14 @@
         }
 
         function renderizarPainelRealtime() {
-            // Atualiza cabeçalho com dados da agência logada
-            const infoAgencia = dadosLocais.agencias[SampleAgenciaId];
-            lblAgenciaLogada.textContent = infoAgencia.nome;
-            txtCreditos.textContent = infoAgencia.creditos;
+            // Atualiza cabeçalho
+            lblAgenciaLogada.textContent = SampleAgenciaId === "ficticia_a" ? "Agência Fictícia A" : "Agência Fictícia B";
+            txtCreditos.textContent = creditosSimulados[SampleAgenciaId];
 
             // Limpa o grid de cards
             aquarioLeads.innerHTML = "";
 
-            // Cria os cards dinamicamente com base no estado do Firebase
+            // Cria os cards dinamicamente
             Object.keys(dadosLocais.leads).forEach(key => {
                 const lead = dadosLocais.leads[key];
                 const card = document.createElement('div');
@@ -337,7 +342,7 @@
                 
                 let htmlAcoes = '';
 
-                if (lead.comprador === "") {
+                if (!lead.comprador || lead.comprador === "") {
                     // Estado: Livre para compra (Card Verde)
                     htmlAcoes = `<button class="btn-pescar" data-id="${lead.id}">PESCAR LEAD (1 CRÉDITO)</button>`;
                 } else {
@@ -345,7 +350,7 @@
                     card.classList.add('atendido');
 
                     if (lead.comprador === SampleAgenciaId) {
-                        // Se você comprou: Revela as informações borradas e ativa o botão de ação
+                        // Se você comprou: Revela as informações borradas
                         card.classList.add('revelado');
                         const msg = encodeURIComponent(`Olá ${lead.nome}, recebemos seu pedido de cotação para ${lead.destino} no Guia do Viajante! Vamos planejar?`);
                         htmlAcoes = `<button class="btn-whatsapp" onclick="window.open('https://wa.me/${lead.whatsapp}?text=${msg}', '_blank')">💬 CHAMAR NO WHATSAPP</button>`;
@@ -368,7 +373,7 @@
                 aquarioLeads.appendChild(card);
             });
 
-            // Atribui os eventos de clique para os novos botões gerados
+            // Atribui os eventos de clique
             document.querySelectorAll('.btn-pescar').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const idLead = e.target.getAttribute('data-id');
@@ -377,21 +382,20 @@
             });
         }
 
-        // Função que grava as alterações diretamente no banco do Firebase
+        // Grava a pescaria no Firebase
         window.pescarLeadNoFirebase = function(idLead) {
-            const agencia = dadosLocais.agencias[SampleAgenciaId];
-            
-            if (agencia.creditos <= 0) {
-                alert('Seu saldo de créditos corporativos acabou!');
+            if (creditosSimulados[SampleAgenciaId] <= 0) {
+                alert('Seu saldo fictício de créditos acabou!');
                 return;
             }
 
-            // Executa uma atualização atômica (Multi-path update) no Firebase
+            // Deduz o crédito localmente na aba de testes
+            creditosSimulados[SampleAgenciaId] -= 1;
+
             const updates = {};
             updates[`guia_viajante_42/leads/${idLead}/comprador`] = SampleAgenciaId;
-            updates[`guia_viajante_42/agencias/${SampleAgenciaId}/creditos`] = agencia.creditos - 1;
 
-            // Envia ao servidor. A sincronização em todas as outras telas abertas ocorre no mesmo milissegundo.
+            // Envia ao servidor
             update(ref(db), updates);
         }
     </script>
