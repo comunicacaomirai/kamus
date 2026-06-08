@@ -54,7 +54,7 @@
 
         .tabs {
             display: flex;
-            gap: 0.5rem;
+            gap: 0.3rem;
             margin-bottom: 1.5rem;
             background: #0f172a;
             padding: 4px;
@@ -63,12 +63,12 @@
 
         .tab-btn {
             flex: 1;
-            padding: 0.5rem;
+            padding: 0.5rem 0.2rem;
             background: transparent;
             border: none;
             color: #94a3b8;
             font-weight: 500;
-            font-size: 0.9rem;
+            font-size: 0.8rem;
             cursor: pointer;
             border-radius: 6px;
             margin: 0;
@@ -131,13 +131,14 @@
 
         button:hover { opacity: 0.95; transform: translateY(-1px); }
 
-        /* ================= TELA DO AQUÁRIO (PAINEL) ================= */
+        /* ================= TELA DO AQUÁRIO & ADMIN ================= */
         .painel-container {
             width: 100%;
             max-width: 1200px;
             display: flex;
             flex-direction: column;
             gap: 2rem;
+            align-self: flex-start;
         }
 
         .painel-header {
@@ -185,7 +186,7 @@
             gap: 1.5rem;
         }
 
-        /* --- ESTADOS DO CARD --- */
+        /* --- ESTADOS DO CARD (LEADS) --- */
         .card-lead {
             background: linear-gradient(135deg, #064e3b 0%, #022c22 100%);
             border: 2px solid #059669;
@@ -195,7 +196,6 @@
             display: flex;
             flex-direction: column;
             gap: 0.75rem;
-            transition: all 0.3s ease;
         }
 
         .card-lead.atendido {
@@ -213,7 +213,6 @@
         .card-lead.atendido h3 { color: #fbbf24; border-bottom: 1px solid rgba(251, 191, 36, 0.2); }
         .lead-info { font-size: 0.95rem; color: #e2e8f0; }
         .lead-info strong { color: #a7f3d0; }
-        .card-lead.atendido .lead-info strong { color: #fde68a; }
 
         .blur-data {
             filter: blur(5px);
@@ -234,12 +233,54 @@
         .btn-pescar { background: linear-gradient(135deg, #10b981 0%, #059669 100%); margin-top: 0.5rem;}
         .btn-whatsapp { background: linear-gradient(135deg, #22c55e 0%, #15803d 100%); margin-top: 0.5rem; }
         .btn-inativo { background: #2d1a0f !important; border: 1px solid #78350f; color: #d97706; cursor: not-allowed; margin-top: 0.5rem; opacity: 0.6; }
+        
+        /* --- ESTILOS DA TABELA DE ADMIN --- */
+        .table-container {
+            background: rgba(30, 41, 59, 0.8);
+            border-radius: 12px;
+            padding: 1.5rem;
+            overflow-x: auto;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            color: #e2e8f0;
+        }
+
+        th, td {
+            padding: 1rem;
+            border-bottom: 1px solid #334155;
+        }
+
+        th {
+            background-color: #0f172a;
+            color: #38bdf8;
+            font-weight: 600;
+        }
+
+        .btn-action {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            width: auto;
+            margin: 0 2px;
+            display: inline-block;
+        }
+        .btn-block { background: #ef4444; color: white; }
+        .btn-unblock { background: #22c55e; color: white; }
+        .btn-credit { background: #eab308; color: #0f172a; }
+
         .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
-    <!-- PORTAL DE ACESSO (LOGIN / CADASTRO) -->
     <div class="container" id="authContainer">
         <h1>Guia do Viajante 42</h1>
         <p class="subtitle">Acesso ao Ecossistema de Leads</p>
@@ -247,22 +288,21 @@
         <div class="tabs">
             <button class="tab-btn active" id="tabLoginBtn">ENTRAR</button>
             <button class="tab-btn" id="tabCadastroBtn">CADASTRAR AGÊNCIA</button>
+            <button class="tab-btn" id="tabAdminBtn" style="color: #f43f5e;">PAINEL ADM</button>
         </div>
 
-        <!-- FORMULÁRIO DE LOGIN -->
         <form id="loginForm">
             <div class="form-group">
                 <label for="loginUser">Nome de Usuário:</label>
-                <input type="text" id="loginUser" placeholder="Digite seu usuário cadastrado" required>
+                <input type="text" id="loginUser" placeholder="Seu usuário cadastrado" required>
             </div>
             <div class="form-group">
                 <label for="loginPassword">Senha:</label>
-                <input type="password" id="loginPassword" placeholder="Digite sua senha" required>
+                <input type="password" id="loginPassword" placeholder="Sua senha" required>
             </div>
             <button type="submit">Acessar Painel</button>
         </form>
 
-        <!-- FORMULÁRIO DE CADASTRO EXPANDIDO -->
         <form id="cadastroForm" class="hidden">
             <div class="form-group">
                 <label for="cadNome">Nome da Agência:</label>
@@ -292,14 +332,25 @@
                     <input type="password" id="cadPassword" placeholder="Crie uma senha" required>
                 </div>
             </div>
-            <p style="font-size: 0.8rem; color: #38bdf8; text-align: center; margin-top: 0.5rem;">
-                * Integração direta com Google Sheets ativa.
+            <p style="font-size: 0.8rem; color: #f43f5e; text-align: center; margin-top: 0.5rem;">
+                * Após o cadastro, aguarde a liberação do administrador.
             </p>
-            <button type="submit" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">Finalizar Registro</button>
+            <button type="submit" style="background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);">Solicitar Acesso</button>
+        </form>
+
+        <form id="adminLoginForm" class="hidden">
+            <div class="form-group">
+                <label for="adminUser">Usuário Master:</label>
+                <input type="text" id="adminUser" placeholder="Usuário do administrador" required>
+            </div>
+            <div class="form-group">
+                <label for="adminPassword">Senha Master:</label>
+                <input type="password" id="adminPassword" placeholder="Senha do administrador" required>
+            </div>
+            <button type="submit" style="background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);">Entrar como Admin</button>
         </form>
     </div>
 
-    <!-- TELA DO PAINEL DO AQUÁRIO -->
     <div class="painel-container hidden" id="painelAquario">
         <div class="painel-header">
             <div>
@@ -308,27 +359,49 @@
             </div>
             <div class="header-meta">
                 <div class="simulador-box">
-                    <label>🏢 Agência Ativa: <strong id="lblAgenciaLogada" style="color:#38bdf8;">-</strong></label>
+                    <label>🏢 Agência: <strong id="lblAgenciaLogada" style="color:#38bdf8;">-</strong></label>
                 </div>
                 <div class="badge-creditos">🪙 Seus Créditos: <span id="txtCreditos">0</span></div>
-                <button id="btnSair" style="width: auto; padding: 0.5rem 1rem; background: #334155; margin: 0;">Sair</button>
+                <button class="btnSair" style="width: auto; padding: 0.5rem 1rem; background: #334155; margin: 0;">Sair</button>
+            </div>
+        </div>
+        <div class="grid-aquario" id="aquarioLeads"></div>
+    </div>
+
+    <div class="painel-container hidden" id="painelAdmin">
+        <div class="painel-header">
+            <div>
+                <h1>Painel Administrativo</h1>
+                <p style="color: #f43f5e;">Gerenciamento de Agências e Ativações</p>
+            </div>
+            <div class="header-meta">
+                <button class="btnSair" style="width: auto; padding: 0.5rem 1rem; background: #334155; margin: 0;">Sair Administrativo</button>
             </div>
         </div>
 
-        <div class="grid-aquario" id="aquarioLeads">
-            <!-- Os cards serão gerados dinamicamente pelo Firebase aqui dentro -->
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Agência</th>
+                        <th>Usuário</th>
+                        <th>WhatsApp / E-mail</th>
+                        <th>Créditos</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="listaAgenciasAdmin">
+                    </tbody>
+            </table>
         </div>
     </div>
 
-    <!-- Importação dos módulos do Firebase (v10+) via CDN -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, set, onValue, update, get, child } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-        // CONFIGURAÇÃO ORIGINAL DO SEU SCRIPT DO GOOGLE SHEETS
-        const URL_GOOGLE_SHEETS = "https://script.google.com/macros/s/AKfycbyR6j8q6WAsM1m_PshvscMmsFk0vD-i0wY3ZgCfev683p3k5rZgclqN0Xq9B4M_6Z0y/exec";
-
-        // Credenciais reais do seu projeto do Firebase
+        // Credenciais do seu projeto do Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyCP2AmKW7NjQrKlfi5Wvx5VY0upEdy8XWo",
             authDomain: "guia-do-viajante-42.firebaseapp.com",
@@ -340,19 +413,12 @@
             measurementId: "G-HWP2FC7V67"
         };
 
-        // Inicializa o Firebase
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // Modelos base de leads 
-        const leadsIniciais = {
-            lead1: { id: "lead1", destino: "Gramado / RS", nome: "Carlos", sobrenome: "Silva", whatsapp: "5541991234567", passageiros: "Casal (2 pessoas)", data: "Julho de 2026", orcamento: "Até R$ 3.000", comprador: "" },
-            lead2: { id: "lead2", destino: "Porto de Galinhas / PE", nome: "Mariana", sobrenome: "Costa", whatsapp: "5511987654321", passageiros: "Família (4 pessoas)", data: "Outubro de 2026", orcamento: "Até R$ 7.500", comprador: "" },
-            lead3: { id: "lead3", destino: "Paris / França", nome: "Rodrigo", sobrenome: "Almeida", whatsapp: "5521999887766", passageiros: "1 pessoa", data: "Dezembro de 2026", orcamento: "Até R$ 12.000", comprador: "" },
-            lead4: { id: "lead4", destino: "Orlando / EUA (Disney)", nome: "Beatriz", sobrenome: "Oliveira", whatsapp: "5531988776655", passageiros: "Família (3 pessoas)", data: "Janeiro de 2027", orcamento: "Até R$ 20.000", comprador: "" },
-            lead5: { id: "lead5", destino: "Natal / RN", nome: "Fernando", sobrenome: "Santos", whatsapp: "5581977665544", passageiros: "Casal (2 pessoas)", data: "Novembro de 2026", orcamento: "Até R$ 4.500", comprador: "" },
-            lead6: { id: "lead6", destino: "Machu Picchu / Peru", nome: "Camila", sobrenome: "Ribeiro", whatsapp: "5519966554433", passageiros: "Grupo (3 amigos)", data: "Setembro de 2026", orcamento: "Até R$ 6.000", comprador: "" }
-        };
+        // CONFIGURAÇÃO DOS SEUS DADOS DE ACESSO MASTER (ADMINISTRADOR)
+        const ADMIN_USER_MASTER = "admin";
+        const ADMIN_PASS_MASTER = "4242"; // Altere para a senha que você quiser usar
 
         let LoggedAgenciaId = "";
         let dadosLocais = {};
@@ -360,170 +426,144 @@
         // Elementos do DOM
         const authContainer = document.getElementById('authContainer');
         const painelAquario = document.getElementById('painelAquario');
+        const painelAdmin = document.getElementById('painelAdmin');
+        
         const loginForm = document.getElementById('loginForm');
         const cadastroForm = document.getElementById('cadastroForm');
-        const aquarioLeads = document.getElementById('aquarioLeads');
-        const txtCreditos = document.getElementById('txtCreditos');
-        const lblAgenciaLogada = document.getElementById('lblAgenciaLogada');
+        const adminLoginForm = document.getElementById('adminLoginForm');
         
         const tabLoginBtn = document.getElementById('tabLoginBtn');
         const tabCadastroBtn = document.getElementById('tabCadastroBtn');
+        const tabAdminBtn = document.getElementById('tabAdminBtn');
 
-        // Alternância de Abas (Login / Cadastro)
-        tabLoginBtn.addEventListener('click', () => {
-            tabLoginBtn.classList.add('active');
-            tabCadastroBtn.classList.remove('active');
-            loginForm.classList.remove('hidden');
-            cadastroForm.classList.add('hidden');
-        });
+        // Navegação das abas do portal
+        tabLoginBtn.addEventListener('click', () => { alterAba(tabLoginBtn, loginForm); });
+        tabCadastroBtn.addEventListener('click', () => { alterAba(tabCadastroBtn, cadastroForm); });
+        tabAdminBtn.addEventListener('click', () => { alterAba(tabAdminBtn, adminLoginForm); });
 
-        tabCadastroBtn.addEventListener('click', () => {
-            tabCadastroBtn.classList.add('active');
-            tabLoginBtn.classList.remove('active');
-            cadastroForm.classList.remove('hidden');
-            loginForm.classList.add('hidden');
-        });
+        function alterAba(botaoAtivo, formularioAtivo) {
+            [tabLoginBtn, tabCadastroBtn, tabAdminBtn].forEach(b => b.classList.remove('active'));
+            [loginForm, cadastroForm, adminLoginForm].forEach(f => f.classList.add('hidden'));
+            botaoAtivo.classList.add('active');
+            formularioAtivo.classList.remove('hidden');
+        }
 
-        // Evento de Cadastro (Firebase + Google Sheets Original)
+        // 1. EVENTO DE CADASTRO: Salva no Firebase como 'bloqueado' e '0 creditos'
         cadastroForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            
-            const nomeAgencia = document.getElementById('cadNome').value.trim();
+            const nome = document.getElementById('cadNome').value.trim();
             const cnpj = document.getElementById('cadCnpj').value.trim();
             const whatsapp = document.getElementById('cadWhatsapp').value.trim();
             const email = document.getElementById('cadEmail').value.trim();
             const usuario = document.getElementById('cadUser').value.trim().toLowerCase().replace(/\s+/g, '');
             const senha = document.getElementById('cadPassword').value;
 
-            if (!usuario || !senha || !nomeAgencia) return;
-
             const dadosAgencia = {
-                id: usuario,
-                nome: nomeAgencia,
-                cnpj: cnpj,
-                whatsapp: whatsapp,
-                email: email,
-                usuario: usuario,
-                senha: senha,
-                creditos: 10 
+                id: usuario, nome, cnpj, whatsapp, email, usuario, senha,
+                creditos: 0,
+                status: "bloqueado" // Inicia bloqueado para análise do Admin
             };
 
-            const dbRef = ref(getDatabase());
             try {
-                // 1. Valida se o usuário já existe no Firebase
-                const snapshot = await get(child(dbRef, `guia_viajante_42/agencias/${usuario}`));
-                
+                const snapshot = await get(child(ref(db), `guia_viajante_42/agencias/${usuario}`));
                 if (snapshot.exists()) {
-                    alert('Este Nome de Usuário já está em uso. Por favor, escolha outro.');
+                    alert('Este nome de usuário já existe!');
                     return;
                 }
-
-                // 2. Grava no Firebase Realtime Database para permitir o login imediato
                 await set(ref(db, `guia_viajante_42/agencias/${usuario}`), dadosAgencia);
-
-                // 3. Salva no seu Google Sheets usando a estrutura original via URLSearchParams / FormData
-                const formData = new URLSearchParams();
-                formData.append("usuario", usuario);
-                formData.append("nome", nomeAgencia);
-                formData.append("cnpj", cnpj);
-                formData.append("whatsapp", whatsapp);
-                formData.append("email", email);
-                formData.append("senha", senha);
-
-                fetch(URL_GOOGLE_SHEETS, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: formData.toString()
-                }).catch(err => console.error("Erro ao sincronizar com Google Sheets: ", err));
-
-                alert(`Agência "${nomeAgencia}" registrada com sucesso!`);
+                alert('Solicitação enviada com sucesso! Aguarde a ativação pelo administrador.');
                 cadastroForm.reset();
                 tabLoginBtn.click();
-                document.getElementById('loginUser').value = usuario;
-
-            } catch (error) {
-                console.error(error);
-                alert('Ocorreu um erro no processamento do cadastro.');
-            }
+            } catch (err) { alert('Erro ao processar cadastro.'); }
         });
 
-        // Evento de Login com Verificação de Usuário e Senha no Firebase
-        loginForm.addEventListener('submit', (e) => {
+        // 2. EVENTO DE LOGIN DA AGÊNCIA (Verifica se está liberada)
+        loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const user = document.getElementById('loginUser').value.trim().toLowerCase();
             const pass = document.getElementById('loginPassword').value;
 
-            const dbRef = ref(getDatabase());
-            get(child(dbRef, `guia_viajante_42/agencias/${user}`)).then((snapshot) => {
+            try {
+                const snapshot = await get(child(ref(db), `guia_viajante_42/agencias/${user}`));
                 if (snapshot.exists()) {
-                    const dadosAgenciaNoBanco = snapshot.val();
-                    
-                    if (dadosAgenciaNoBanco.senha === pass) {
+                    const agencia = snapshot.val();
+                    if (agencia.senha === pass) {
+                        if (agencia.status === "bloqueado") {
+                            alert('Sua conta ainda não foi liberada pelo administrador ou está suspensa.');
+                            return;
+                        }
                         LoggedAgenciaId = user;
                         authContainer.classList.add('hidden');
                         painelAquario.classList.remove('hidden');
-                        
-                        conectarAoFirebaseRealtime();
-                    } else {
-                        alert('Senha incorreta! Tente novamente.');
-                    }
-                } else {
-                    alert('Usuário não encontrado! Verifique os dados ou realize o cadastro.');
-                }
-            }).catch((error) => {
-                console.error(error);
-                alert('Falha na comunicação com o servidor de autenticação.');
+                        conectarAoFirebaseRealtime(false);
+                    } else { alert('Senha incorreta!'); }
+                } else { alert('Usuário não encontrado!'); }
+            } catch (err) { alert('Erro de conexão.'); }
+        });
+
+        // 3. EVENTO DE LOGIN DO ADMINISTRADOR (MOISÉS)
+        adminLoginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const user = document.getElementById('adminUser').value.trim();
+            const pass = document.getElementById('adminPassword').value;
+
+            if (user === ADMIN_USER_MASTER && pass === ADMIN_PASS_MASTER) {
+                authContainer.classList.add('hidden');
+                painelAdmin.classList.remove('hidden');
+                conectarAoFirebaseRealtime(true); // Liga o modo Admin
+            } else {
+                alert('Credenciais administrativas inválidas!');
+            }
+        });
+
+        // Eventos de Sair de qualquer painel
+        document.querySelectorAll('.btnSair').forEach(btn => {
+            btn.addEventListener('click', () => {
+                painelAquario.classList.add('hidden');
+                painelAdmin.classList.add('hidden');
+                authContainer.classList.remove('hidden');
+                loginForm.reset(); adminLoginForm.reset();
             });
         });
 
-        document.getElementById('btnSair').addEventListener('click', () => {
-            painelAquario.classList.add('hidden');
-            authContainer.classList.remove('hidden');
-            loginForm.reset();
-        });
-
-        function conectarAoFirebaseRealtime() {
-            const dbRef = ref(db, 'guia_viajante_42');
-
-            onValue(dbRef, (snapshot) => {
-                const data = snapshot.val();
-                
-                if (!data || !data.leads) {
-                    set(ref(db, 'guia_viajante_42/leads'), leadsIniciais);
-                    return;
+        // Sincronização em Tempo Real com o Banco
+        function conectarAoFirebaseRealtime(isAdmin) {
+            onValue(ref(db, 'guia_viajante_42'), (snapshot) => {
+                dadosLocais = snapshot.val() || {};
+                if (isAdmin) {
+                    renderizarPainelAdmin();
+                } else {
+                    renderizarPainelAgencia();
                 }
-
-                dadosLocais = data;
-                renderizarPainelRealtime();
             });
         }
 
-        function renderizarPainelRealtime() {
+        // RENDERIZADOR 1: Visão da Agência (Aquário de Leads)
+        function renderizarPainelAgencia() {
             const infoAgencia = dadosLocais.agencias ? dadosLocais.agencias[LoggedAgenciaId] : null;
-            
             if (infoAgencia) {
-                lblAgenciaLogada.textContent = infoAgencia.nome;
-                txtCreditos.textContent = infoAgencia.creditos;
+                document.getElementById('lblAgenciaLogada').textContent = infoAgencia.nome;
+                document.getElementById('txtCreditos').textContent = infoAgencia.creditos;
             }
 
+            const aquarioLeads = document.getElementById('aquarioLeads');
             aquarioLeads.innerHTML = "";
+
+            if (!dadosLocais.leads) return;
 
             Object.keys(dadosLocais.leads).forEach(key => {
                 const lead = dadosLocais.leads[key];
                 const card = document.createElement('div');
                 card.className = 'card-lead';
-                
                 let htmlAcoes = '';
 
                 if (!lead.comprador || lead.comprador === "") {
                     htmlAcoes = `<button class="btn-pescar" data-id="${lead.id}">PESCAR LEAD (1 CRÉDITO)</button>`;
                 } else {
                     card.classList.add('atendido');
-
                     if (lead.comprador === LoggedAgenciaId) {
                         card.classList.add('revelado');
-                        const msg = encodeURIComponent(`Olá ${lead.nome}, recebemos seu pedido de cotação para ${lead.destino} no Guia do Viajante! Vamos planejar?`);
+                        const msg = encodeURIComponent(`Olá ${lead.nome}, recebemos seu pedido de cotação para ${lead.destino}!`);
                         htmlAcoes = `<button class="btn-whatsapp" onclick="window.open('https://wa.me/${lead.whatsapp}?text=${msg}', '_blank')">💬 CHAMAR NO WHATSAPP</button>`;
                     } else {
                         htmlAcoes = `<button class="btn-inativo" disabled>⚠️ EM ATENDIMENTO POR OUTRA AGÊNCIA</button>`;
@@ -532,38 +572,85 @@
 
                 card.innerHTML = `
                     <h3>✈️ Destino: ${lead.destino}</h3>
-                    <div class="lead-info">👤 <strong>Nome:</strong> ${lead.nome} <span class="blur-data">${lead.sobrenome}</span></div>
+                    <div class="lead-info">👤 <strong>Nome:</strong> ${lead.nome} <span class="blur-data">${lead.sobrenome || ''}</span></div>
                     <div class="lead-info">📱 <strong>WhatsApp:</strong> <span class="blur-data">${lead.whatsapp}</span></div>
                     <div class="lead-info">👥 <strong>Passageiros:</strong> ${lead.passageiros}</div>
-                    <div class="lead-info">📅 <strong>Data Prevista:</strong> ${lead.data}</div>
-                    <div class="lead-info">💰 <strong>Orçamento Máx:</strong> ${lead.orcamento}</div>
                     <div class="lead-actions">${htmlAcoes}</div>
                 `;
-
                 aquarioLeads.appendChild(card);
             });
 
             document.querySelectorAll('.btn-pescar').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const idLead = e.target.getAttribute('data-id');
-                    pescarLeadNoFirebase(idLead);
+                    const dadosAgenciaAtiva = dadosLocais.agencias[LoggedAgenciaId];
+                    if (!dadosAgenciaAtiva || dadosAgenciaAtiva.creditos <= 0) {
+                        alert('Créditos insuficientes!'); return;
+                    }
+                    const updates = {};
+                    updates[`guia_viajante_42/leads/${idLead}/comprador`] = LoggedAgenciaId;
+                    updates[`guia_viajante_42/agencias/${LoggedAgenciaId}/creditos`] = dadosAgenciaAtiva.creditos - 1;
+                    update(ref(db), updates);
                 });
             });
         }
 
-        window.pescarLeadNoFirebase = function(idLead) {
-            const dadosAgenciaAtiva = dadosLocais.agencias[LoggedAgenciaId];
-            
-            if (!dadosAgenciaAtiva || dadosAgenciaAtiva.creditos <= 0) {
-                alert('Você não possui créditos suficientes para realizar esta pescaria!');
+        // RENDERIZADOR 2: Sua Visão Backend (Administração Completa)
+        function renderizarPainelAdmin() {
+            const listaAdmin = document.getElementById('listaAgenciasAdmin');
+            listaAdmin.innerHTML = "";
+
+            if (!dadosLocais.agencias) {
+                listaAdmin.innerHTML = `<tr><td colspan="6" style="text-align:center;">Nenhuma agência cadastrada.</td></tr>`;
                 return;
             }
 
-            const updates = {};
-            updates[`guia_viajante_42/leads/${idLead}/comprador`] = LoggedAgenciaId;
-            updates[`guia_viajante_42/agencias/${LoggedAgenciaId}/creditos`] = dadosAgenciaAtiva.creditos - 1;
+            Object.keys(dadosLocais.agencias).forEach(key => {
+                const ag = dadosLocais.agencias[key];
+                const tr = document.createElement('tr');
 
-            update(ref(db), updates);
+                const statusBadge = ag.status === 'bloqueado' 
+                    ? `<span style="color:#ef4444; font-weight:bold;">🔴 Bloqueado</span>`
+                    : `<span style="color:#22c55e; font-weight:bold;">🟢 Ativo</span>`;
+
+                const btnStatus = ag.status === 'bloqueado'
+                    ? `<button class="btn-action btn-unblock" data-id="${ag.id}" data-action="ativar">🔓 Liberar</button>`
+                    : `<button class="btn-action btn-block" data-id="${ag.id}" data-action="bloquear">🔒 Bloquear</button>`;
+
+                tr.innerHTML = `
+                    <td><strong>${ag.nome}</strong><br><small style="color:#94a3b8">CNPJ: ${ag.cnpj}</small></td>
+                    <td><code>${ag.usuario}</code><br><small style="color:#94a3b8">Senha: ${ag.senha}</small></td>
+                    <td>📱 ${ag.whatsapp}<br>✉️ ${ag.email}</td>
+                    <td style="font-size:1.1rem; font-weight:bold; color:#eab308">🪙 ${ag.creditos}</td>
+                    <td>${statusBadge}</td>
+                    <td>
+                        ${btnStatus}
+                        <button class="btn-action btn-credit" data-id="${ag.id}">➕ Crédito</button>
+                    </td>
+                `;
+                listaAdmin.appendChild(tr);
+            });
+
+            // Eventos dos botões de ação do seu painel administrativo
+            document.querySelectorAll('.btn-action').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const idAgencia = e.target.getAttribute('data-id');
+                    const acao = e.target.getAttribute('data-action');
+
+                    if (acao === "ativar") {
+                        update(ref(db), { [`guia_viajante_42/agencias/${idAgencia}/status`]: "ativo" });
+                    } else if (acao === "bloquear") {
+                        update(ref(db), { [`guia_viajante_42/agencias/${idAgencia}/status`]: "bloqueado" });
+                    } else {
+                        // Ação de adicionar créditos
+                        const qtd = prompt("Quantos créditos deseja ADICIONAR para esta agência?", "10");
+                        if (qtd && !isNaN(qtd)) {
+                            const creditosAtuais = dadosLocais.agencias[idAgencia].creditos || 0;
+                            update(ref(db), { [`guia_viajante_42/agencias/${idAgencia}/creditos`]: creditosAtuais + parseInt(qtd) });
+                        }
+                    }
+                });
+            });
         }
     </script>
 </body>
