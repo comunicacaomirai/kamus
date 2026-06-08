@@ -183,7 +183,7 @@
             color: #a7f3d0;
         }
 
-        /* Efeito Borrado para proteção de dados antes da pesca */
+        /* Efeito Borrado parcial para o final do nome/celular */
         .blur-data {
             filter: blur(5px);
             user-select: none;
@@ -275,8 +275,8 @@
             
             <div class="card-lead">
                 <h3>✈️ Destino: Gramado / RS</h3>
-                <div class="lead-info">👤 <strong>Nome:</strong> <span class="blur-data">Carlos Silva</span></div>
-                <div class="lead-info">📱 <strong>WhatsApp:</strong> <span class="blur-data">(41) 99999-9999</span></div>
+                <div class="lead-info">👤 <strong>Nome:</strong> Carlos <span class="blur-data">Silva</span></div>
+                <div class="lead-info">📱 <strong>WhatsApp:</strong> (41) 99999-<span class="blur-data">9999</span></div>
                 <div class="lead-info">👥 <strong>Passageiros:</strong> Casal (2 pessoas)</div>
                 <div class="lead-info">📅 <strong>Data Aprox:</strong> Julho de 2026</div>
                 <div class="lead-info">💰 <strong>Orçamento:</strong> Até R$ 150/mês</div>
@@ -285,8 +285,8 @@
 
             <div class="card-lead">
                 <h3>🏖️ Destino: Porto de Galinhas</h3>
-                <div class="lead-info">👤 <strong>Nome:</strong> <span class="blur-data">Mariana Costa</span></div>
-                <div class="lead-info">📱 <strong>WhatsApp:</strong> <span class="blur-data">(11) 98888-8888</span></div>
+                <div class="lead-info">👤 <strong>Nome:</strong> Mariana <span class="blur-data">Costa</span></div>
+                <div class="lead-info">📱 <strong>WhatsApp:</strong> (11) 98888-<span class="blur-data">8888</span></div>
                 <div class="lead-info">👥 <strong>Passageiros:</strong> Família (4 pessoas)</div>
                 <div class="lead-info">📅 <strong>Data Aprox:</strong> Outubro de 2026</div>
                 <div class="lead-info">💰 <strong>Orçamento:</strong> Até R$ 250/mês</div>
@@ -380,10 +380,7 @@
             btnLogin.textContent = 'Verificando...';
             btnLogin.disabled = true;
 
-            // Como o Apps Script com 'no-cors' não deixa ler a planilha de volta direto por segurança HTTP simples,
-            // criamos uma trava de validação inteligente local para o seu teste de MVP aceitar o login:
             if(usuarioDigitado !== "" && senhaDigitada.length >= 4) {
-                // Simula o delay de resposta do banco e abre o aquário
                 setTimeout(() => {
                     authContainer.classList.add('hidden');
                     painelAquario.classList.remove('hidden');
