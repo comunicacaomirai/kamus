@@ -249,7 +249,7 @@
             <button class="tab-btn" id="tabCadastroBtn">CADASTRAR AGÊNCIA</button>
         </div>
 
-        <!-- FORMULÁRIO DE LOGIN (CAMPOS: USUÁRIO E SENHA) -->
+        <!-- FORMULÁRIO DE LOGIN -->
         <form id="loginForm">
             <div class="form-group">
                 <label for="loginUser">Nome de Usuário:</label>
@@ -293,7 +293,7 @@
                 </div>
             </div>
             <p style="font-size: 0.8rem; color: #38bdf8; text-align: center; margin-top: 0.5rem;">
-                * Sincronização automatizada com Google Sheets ativa.
+                * Integração direta com Google Sheets ativa.
             </p>
             <button type="submit" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">Finalizar Registro</button>
         </form>
@@ -325,9 +325,8 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, set, onValue, update, get, child } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-        // CONFIGURAÇÃO DO SEU WEBHOOK DO GOOGLE SHEETS
-        // Insira a URL do seu Google Apps Script, Make (Integromat) ou n8n aqui embaixo:
-        const URL_WEBHOOK_GOOGLE_SHEETS = "SUA_URL_DO_WEBHOOK_AQUI";
+        // CONFIGURAÇÃO ORIGINAL DO SEU SCRIPT DO GOOGLE SHEETS
+        const URL_GOOGLE_SHEETS = "https://script.google.com/macros/s/AKfycbyR6j8q6WAsM1m_PshvscMmsFk0vD-i0wY3ZgCfev683p3k5rZgclqN0Xq9B4M_6Z0y/exec";
 
         // Credenciais reais do seu projeto do Firebase
         const firebaseConfig = {
@@ -345,7 +344,7 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // Modelos base de leads (serão criados apenas se o banco de dados estiver completamente vazio)
+        // Modelos base de leads 
         const leadsIniciais = {
             lead1: { id: "lead1", destino: "Gramado / RS", nome: "Carlos", sobrenome: "Silva", whatsapp: "5541991234567", passageiros: "Casal (2 pessoas)", data: "Julho de 2026", orcamento: "Até R$ 3.000", comprador: "" },
             lead2: { id: "lead2", destino: "Porto de Galinhas / PE", nome: "Mariana", sobrenome: "Costa", whatsapp: "5511987654321", passageiros: "Família (4 pessoas)", data: "Outubro de 2026", orcamento: "Até R$ 7.500", comprador: "" },
@@ -385,7 +384,7 @@
             loginForm.classList.add('hidden');
         });
 
-        // Evento de Cadastro Real (Firebase + Google Sheets)
+        // Evento de Cadastro (Firebase + Google Sheets Original)
         cadastroForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
@@ -398,21 +397,20 @@
 
             if (!usuario || !senha || !nomeAgencia) return;
 
-            // Objeto estruturado com todos os dados coletados
             const dadosAgencia = {
-                id: usuario, // O próprio nome de usuário único serve como chave primária identificadora
+                id: usuario,
                 nome: nomeAgencia,
                 cnpj: cnpj,
                 whatsapp: whatsapp,
                 email: email,
                 usuario: usuario,
                 senha: senha,
-                creditos: 10 // Cortesia padrão inicial
+                creditos: 10 
             };
 
             const dbRef = ref(getDatabase());
             try {
-                // 1. Verifica duplicidade de usuário no banco de dados
+                // 1. Valida se o usuário já existe no Firebase
                 const snapshot = await get(child(dbRef, `guia_viajante_42/agencias/${usuario}`));
                 
                 if (snapshot.exists()) {
@@ -420,18 +418,24 @@
                     return;
                 }
 
-                // 2. Grava no Firebase Realtime Database
+                // 2. Grava no Firebase Realtime Database para permitir o login imediato
                 await set(ref(db, `guia_viajante_42/agencias/${usuario}`), dadosAgencia);
 
-                // 3. Dispara a gravação em segundo plano para a sua Google Sheets
-                if (URL_WEBHOOK_GOOGLE_SHEETS && URL_WEBHOOK_GOOGLE_SHEETS !== "SUA_URL_DO_WEBHOOK_AQUI") {
-                    fetch(URL_WEBHOOK_GOOGLE_SHEETS, {
-                        method: 'POST',
-                        mode: 'no-cors', // Evita problemas de CORS comuns ao disparar para scripts do google
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(dadosAgencia)
-                    }).catch(err => console.error("Erro ao espelhar no Sheets: ", err));
-                }
+                // 3. Salva no seu Google Sheets usando a estrutura original via URLSearchParams / FormData
+                const formData = new URLSearchParams();
+                formData.append("usuario", usuario);
+                formData.append("nome", nomeAgencia);
+                formData.append("cnpj", cnpj);
+                formData.append("whatsapp", whatsapp);
+                formData.append("email", email);
+                formData.append("senha", senha);
+
+                fetch(URL_GOOGLE_SHEETS, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: formData.toString()
+                }).catch(err => console.error("Erro ao sincronizar com Google Sheets: ", err));
 
                 alert(`Agência "${nomeAgencia}" registrada com sucesso!`);
                 cadastroForm.reset();
@@ -444,7 +448,7 @@
             }
         });
 
-        // Evento de Login Real com Validação de Usuário e Senha
+        // Evento de Login com Verificação de Usuário e Senha no Firebase
         loginForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const user = document.getElementById('loginUser').value.trim().toLowerCase();
@@ -455,7 +459,6 @@
                 if (snapshot.exists()) {
                     const dadosAgenciaNoBanco = snapshot.val();
                     
-                    // Validação de segurança básica da senha associada
                     if (dadosAgenciaNoBanco.senha === pass) {
                         LoggedAgenciaId = user;
                         authContainer.classList.add('hidden');
@@ -549,16 +552,16 @@
         }
 
         window.pescarLeadNoFirebase = function(idLead) {
-            const SampleAgenciaId = dadosLocais.agencias[LoggedAgenciaId];
+            const dadosAgenciaAtiva = dadosLocais.agencias[LoggedAgenciaId];
             
-            if (!SampleAgenciaId || SampleAgenciaId.creditos <= 0) {
+            if (!dadosAgenciaAtiva || dadosAgenciaAtiva.creditos <= 0) {
                 alert('Você não possui créditos suficientes para realizar esta pescaria!');
                 return;
             }
 
             const updates = {};
             updates[`guia_viajante_42/leads/${idLead}/comprador`] = LoggedAgenciaId;
-            updates[`guia_viajante_42/agencias/${LoggedAgenciaId}/creditos`] = SampleAgenciaId.creditos - 1;
+            updates[`guia_viajante_42/agencias/${LoggedAgenciaId}/creditos`] = dadosAgenciaAtiva.creditos - 1;
 
             update(ref(db), updates);
         }
