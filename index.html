@@ -80,7 +80,7 @@
             font-weight: 500;
         }
 
-        input {
+        input, select {
             width: 100%;
             padding: 0.75rem 1rem;
             background-color: #0f172a;
@@ -91,7 +91,7 @@
             transition: all 0.2s ease;
         }
 
-        input:focus {
+        input:focus, select:focus {
             outline: none;
             border-color: #38bdf8;
             box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
@@ -144,22 +144,41 @@
             align-items: center;
             border-bottom: 1px solid #334155;
             padding-bottom: 1rem;
+            flex-wrap: wrap;
+            gap: 1rem;
         }
 
         .header-meta {
             display: flex;
             align-items: center;
-            gap: 1.5rem;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .simulador-box {
+            background-color: #1e293b;
+            border: 1px dashed #e2e8f0;
+            padding: 0.5rem;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .simulador-box label {
+            margin-bottom: 0;
+            color: #f8fafc;
         }
 
         .badge-creditos {
-            background-color: #1e293b;
+            background-color: #0f172a;
             border: 1px solid #38bdf8;
             padding: 0.5rem 1rem;
             border-radius: 30px;
             font-size: 0.95rem;
             font-weight: 600;
             color: #38bdf8;
+            white-space: nowrap;
         }
 
         .grid-aquario {
@@ -168,7 +187,8 @@
             gap: 1.5rem;
         }
 
-        /* --- Janela em Tom Verde (Disponível) --- */
+        /* --- ESTADOS DO CARD --- */
+        /* Verde: Lead Disponível */
         .card-lead {
             background: linear-gradient(135deg, #064e3b 0%, #022c22 100%);
             border: 2px solid #059669;
@@ -183,7 +203,7 @@
             transition: all 0.3s ease;
         }
 
-        /* --- Janela em Tom Amarelo (Selecionado) --- */
+        /* Amarelo: Lead Em Atendimento (Para qualquer agência) */
         .card-lead.atendido {
             background: linear-gradient(135deg, #78350f 0%, #451a03 100%);
             border: 2px solid #d97706;
@@ -195,28 +215,18 @@
             border-bottom: 1px solid rgba(52, 211, 153, 0.2);
             padding-bottom: 0.5rem;
             margin-bottom: 0.25rem;
-            transition: all 0.3s ease;
         }
 
-        .card-lead.atendido h3 {
-            color: #fbbf24;
-            border-bottom: 1px solid rgba(251, 191, 36, 0.2);
+        .card-lead.atendido h3 { 
+            color: #fbbf24; 
+            border-bottom: 1px solid rgba(251, 191, 36, 0.2); 
         }
 
-        .lead-info {
-            font-size: 0.95rem;
-            color: #e2e8f0;
-        }
+        .lead-info { font-size: 0.95rem; color: #e2e8f0; }
+        .lead-info strong { color: #a7f3d0; }
+        .card-lead.atendido .lead-info strong { color: #fde68a; }
 
-        .lead-info strong {
-            color: #a7f3d0;
-        }
-
-        .card-lead.atendido .lead-info strong {
-            color: #fde68a;
-        }
-
-        /* Controle de Desfoque */
+        /* Controle do Efeito Borrado */
         .blur-data {
             filter: blur(5px);
             user-select: none;
@@ -226,14 +236,15 @@
             padding: 0 4px;
         }
 
-        .card-lead.atendido .blur-data {
+        /* Só remove o borrão se o card for explicitamente desborrado por QUEM comprou */
+        .card-lead.atendido.revelado .blur-data {
             filter: none;
             user-select: text;
             background-color: transparent;
             padding: 0;
         }
 
-        /* --- Botões --- */
+        /* --- Botões Customizados --- */
         .btn-pescar {
             background: linear-gradient(135deg, #10b981 0%, #059669 100%);
             margin-top: 0.5rem;
@@ -246,9 +257,16 @@
             margin-top: 0.5rem;
         }
 
-        .hidden {
-            display: none !important;
+        .btn-inativo {
+            background: #2d1a0f !important;
+            border: 1px solid #78350f;
+            color: #d97706;
+            cursor: not-allowed;
+            margin-top: 0.5rem;
+            opacity: 0.6;
         }
+
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
@@ -258,57 +276,48 @@
         <h1>Guia do Viajante 42</h1>
         <p class="subtitle" id="formSubtitle">Painel de Agências Parceiras</p>
 
-        <!-- TELA DE LOGIN -->
         <form id="loginForm">
             <div class="form-group">
                 <label for="loginUser">Nome de Usuário</label>
-                <input type="text" id="loginUser" placeholder="Ex: miraiturismo" required autocomplete="username">
+                <input type="text" id="loginUser" placeholder="Ex: miraiturismo" required>
             </div>
-            
             <div class="form-group">
                 <label for="loginPassword">Senha</label>
-                <input type="password" id="loginPassword" placeholder="••••••••" required autocomplete="current-password">
+                <input type="password" id="loginPassword" placeholder="••••••••" required>
             </div>
-
             <button type="submit">Entrar no Aquário</button>
-            
-            <div class="toggle-link">
-                Não tem acesso? <span id="btnIrParaCadastro">Fazer cadastro</span>
-            </div>
+            <div class="toggle-link">Não tem acesso? <span id="btnIrParaCadastro">Fazer cadastro</span></div>
         </form>
 
-        <!-- TELA DE CADASTRO -->
         <form id="registerForm" class="hidden">
             <div class="form-grid">
                 <div class="form-group full-width">
                     <label for="regNomeEmpresa">Nome da Empresa</label>
-                    <input type="text" id="regNomeEmpresa" placeholder="Nome Comercial da Agência" required>
+                    <input type="text" id="regNomeEmpresa" placeholder="Nome da Agência" required>
                 </div>
                 <div class="form-group">
                     <label for="regCNPJ">CNPJ</label>
                     <input type="text" id="regCNPJ" placeholder="00.000.000/0001-00" required>
                 </div>
                 <div class="form-group">
-                    <label for="regWhatsapp">WhatsApp (com DDD)</label>
+                    <label for="regWhatsapp">WhatsApp</label>
                     <input type="tel" id="regWhatsapp" placeholder="41999999999" required>
                 </div>
                 <div class="form-group full-width">
-                    <label for="regEmail">E-mail Corporativo</label>
-                    <input type="email" id="regEmail" placeholder="contato@suaempresa.com" required autocomplete="email">
+                    <label for="regEmail">E-mail</label>
+                    <input type="email" id="regEmail" placeholder="contato@empresa.com" required>
                 </div>
                 <div class="form-group">
-                    <label for="regUsername">Nome de Usuário</label>
-                    <input type="text" id="regUsername" placeholder="Ex: miraiturismo" required autocomplete="username">
+                    <label for="regUsername">Usuário</label>
+                    <input type="text" id="regUsername" placeholder="Ex: miraiturismo" required>
                 </div>
                 <div class="form-group">
-                    <label for="regPassword">Senha de Acesso</label>
-                    <input type="password" id="regPassword" placeholder="••••••••" required autocomplete="new-password">
+                    <label for="regPassword">Senha</label>
+                    <input type="password" id="regPassword" placeholder="••••••••" required>
                 </div>
             </div>
             <button type="submit">Solicitar Cadastro</button>
-            <div class="toggle-link">
-                Já possui uma conta? <span id="btnIrParaLogin">Fazer login</span>
-            </div>
+            <div class="toggle-link">Já possui conta? <span id="btnIrParaLogin">Fazer login</span></div>
         </form>
     </div>
 
@@ -317,11 +326,20 @@
         <div class="painel-header">
             <div>
                 <h1>Aquário de Leads</h1>
-                <p style="color: #94a3b8;">Bem-vindo ao Guia do Viajante 42</p>
+                <p style="color: #94a3b8;">Painel de Monitoramento Local</p>
             </div>
+            
             <div class="header-meta">
-                <!-- Iniciando o MVP com a sugestão de 10 créditos -->
-                <div class="badge-creditos">🪙 Créditos Disponíveis: <span id="txtCreditos">10</span></div>
+                <!-- Seletor para simular a visão das duas agências -->
+                <div class="simulador-box">
+                    <label for="selectAgencia">⚙️ Olhar painel como:</label>
+                    <select id="selectAgencia" onchange="alternarAgenciaSimulada()" style="width: auto; padding: 0.25rem 0.5rem; background: #0f172a;">
+                        <option value="agencia1">Mirai Turismo (Agência A)</option>
+                        <option value="agencia2">Pinhais Viagens (Agência B)</option>
+                    </select>
+                </div>
+
+                <div class="badge-creditos">🪙 Créditos: <span id="txtCreditos">10</span></div>
                 <button id="btnSair" style="width: auto; padding: 0.5rem 1rem; background: #334155; margin: 0;">Sair</button>
             </div>
         </div>
@@ -329,28 +347,26 @@
         <div class="grid-aquario" id="aquarioLeads">
             
             <!-- Lead 1 -->
-            <div class="card-lead" id="lead1" data-nome-completo="Silva" data-whatsapp-final="99123-4567" data-destino="Gramado / RS">
+            <div class="card-lead" id="lead1" data-nome-completo="Silva" data-whatsapp-final="99123-4567" data-destino="Gramado / RS" data-comprador="">
                 <h3>✈️ Destino: Gramado / RS</h3>
                 <div class="lead-info">👤 <strong>Nome:</strong> Carlos <span class="blur-data">Silva</span></div>
                 <div class="lead-info">📱 <strong>WhatsApp:</strong> (41) 99123-<span class="blur-data">4567</span></div>
                 <div class="lead-info">👥 <strong>Passageiros:</strong> Casal (2 pessoas)</div>
                 <div class="lead-info">📅 <strong>Data Aprox:</strong> Julho de 2026</div>
                 <div class="lead-info">💰 <strong>Orçamento:</strong> Até R$ 150/mês</div>
-                
                 <div class="lead-actions">
                     <button class="btn-pescar" onclick="selecionarLead('lead1')">SELECIONAR LEAD (1C)</button>
                 </div>
             </div>
 
             <!-- Lead 2 -->
-            <div class="card-lead" id="lead2" data-nome-completo="Costa" data-whatsapp-final="98765-4321" data-destino="Porto de Galinhas">
+            <div class="card-lead" id="lead2" data-nome-completo="Costa" data-whatsapp-final="98765-4321" data-destino="Porto de Galinhas" data-comprador="">
                 <h3>🏖️ Destino: Porto de Galinhas</h3>
                 <div class="lead-info">👤 <strong>Nome:</strong> Mariana <span class="blur-data">Costa</span></div>
                 <div class="lead-info">📱 <strong>WhatsApp:</strong> (11) 98765-<span class="blur-data">4321</span></div>
                 <div class="lead-info">👥 <strong>Passageiros:</strong> Família (4 pessoas)</div>
                 <div class="lead-info">📅 <strong>Data Aprox:</strong> Outubro de 2026</div>
                 <div class="lead-info">💰 <strong>Orçamento:</strong> Até R$ 250/mês</div>
-                
                 <div class="lead-actions">
                     <button class="btn-pescar" onclick="selecionarLead('lead2')">SELECIONAR LEAD (1C)</button>
                 </div>
@@ -362,90 +378,92 @@
     <script>
         const authContainer = document.getElementById('authContainer');
         const painelAquario = document.getElementById('painelAquario');
-        const subtitle = document.getElementById('formSubtitle');
-        
         const loginForm = document.getElementById('loginForm');
         const registerForm = document.getElementById('registerForm');
-        
-        const btnIrParaCadastro = document.getElementById('btnIrParaCadastro');
-        const btnIrParaLogin = document.getElementById('btnIrParaLogin');
         const btnSair = document.getElementById('btnSair');
 
-        // Configuração inicial de créditos baseado no plano de R$ 49,90
-        let saldoCreditos = 10;
+        // Banco de dados simulado para os saldos das agências
+        const sessoes = {
+            agencia1: { nome: "Mirai Turismo", creditos: 10 },
+            agencia2: { nome: "Pinhais Viagens", creditos: 10 }
+        };
+        let agenciaAtual = "agencia1";
+
         const txtCreditos = document.getElementById('txtCreditos');
+        const selectAgencia = document.getElementById('selectAgencia');
 
-        const googleScriptURL = 'https://script.google.com/macros/s/AKfycbzWaQtBzagrWw1E8862Sn353qCoJuOBIERCCC2Cfuzk0BFbtvjUhoCllY7K0vkm8a9n/exec';
+        // Navegação básica
+        document.getElementById('btnIrParaCadastro').addEventListener('click', () => { loginForm.classList.add('hidden'); registerForm.classList.remove('hidden'); authContainer.classList.add('expanded'); });
+        document.getElementById('btnIrParaLogin').addEventListener('click', () => { registerForm.classList.add('hidden'); loginForm.classList.remove('hidden'); authContainer.classList.remove('expanded'); });
+        btnSair.addEventListener('click', () => { painelAquario.classList.add('hidden'); authContainer.classList.remove('hidden'); });
 
-        btnIrParaCadastro.addEventListener('click', () => {
-            loginForm.classList.add('hidden');
-            registerForm.classList.remove('hidden');
-            authContainer.classList.add('expanded');
-            subtitle.textContent = 'Crie a sua conta para acessar os leads';
-        });
-
-        btnIrParaLogin.addEventListener('click', () => {
-            registerForm.classList.add('hidden');
-            loginForm.classList.remove('hidden');
-            authContainer.classList.remove('expanded');
-            subtitle.textContent = 'Painel de Agências Parceiras';
-        });
-
-        btnSair.addEventListener('click', () => {
-            painelAquario.classList.add('hidden');
-            authContainer.classList.remove('hidden');
-            loginForm.reset();
-        });
-
-        // Lógica de Login Simplificada
         loginForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            const usuarioDigitado = document.getElementById('loginUser').value.trim();
-            const senhaDigitada = document.getElementById('loginPassword').value;
-            const btnLogin = loginForm.querySelector('button[type="submit"]');
-            
-            btnLogin.textContent = 'Verificando...';
-            btnLogin.disabled = true;
-
-            if(usuarioDigitado !== "" && senhaDigitada.length >= 4) {
-                setTimeout(() => {
-                    authContainer.classList.add('hidden');
-                    painelAquario.classList.remove('hidden');
-                    btnLogin.textContent = 'Entrar no Aquário';
-                    btnLogin.disabled = false;
-                }, 600);
-            } else {
-                alert('Usuário ou senha inválidos.');
-                btnLogin.textContent = 'Entrar no Aquário';
-                btnLogin.disabled = false;
-            }
+            authContainer.classList.add('hidden');
+            painelAquario.classList.remove('hidden');
+            renderizarAquario();
         });
 
-        // ================= CONSUMO DE CRÉDITO DEFINITIVO =================
+        // Alterna entre os perfis das agências para testar a visão de cada uma
+        function alternarAgenciaSimulada() {
+            agenciaAtual = selectAgencia.value;
+            renderizarAquario();
+        }
+
+        // ================= ATUALIZAÇÃO REGRAS DO AQUÁRIO TRANSPARENTE =================
+        function renderizarAquario() {
+            txtCreditos.textContent = sessoes[agenciaAtual].creditos;
+            
+            const cards = document.querySelectorAll('.card-lead');
+            cards.forEach(card => {
+                const comprador = card.getAttribute('data-comprador');
+                const containerAcoes = card.querySelector('.lead-actions');
+                const idCard = card.id;
+
+                // Reseta os estados visuais padrão
+                card.classList.remove('atendido', 'revelado');
+
+                if (comprador === "") {
+                    // ESTADO: Verde e Livre
+                    containerAcoes.innerHTML = `<button class="btn-pescar" onclick="selecionarLead('${idCard}')">SELECIONAR LEAD (1C)</button>`;
+                } 
+                else {
+                    // AMBOS OS CASOS: A janela fica amarela para todo mundo
+                    card.classList.add('atendido');
+
+                    if (comprador === agenciaAtual) {
+                        // CASO A: Foi VOCÊ quem comprou. Janela amarela, dados abertos e botão WHATSAPP ativo!
+                        card.classList.add('revelado');
+                        
+                        const primeiroNome = idCard === "lead1" ? "Carlos" : "Mariana";
+                        const ddd = idCard === "lead1" ? "5541" : "5511";
+                        const numeroLimpo = ddd + card.getAttribute('data-whatsapp-final').replace('-', '');
+                        const destino = card.getAttribute('data-destino');
+                        const mensagem = encodeURIComponent(`Olá ${primeiroNome}, tudo bem? Sou o consultor parceiro do Guia do Viajante 42! Vi que você solicitou um orçamento de viagem para ${destino}. Vamos planejar?`);
+                        
+                        containerAcoes.innerHTML = `<button class="btn-whatsapp" onclick="window.open('https://wa.me/${numeroLimpo}?text=${mensagem}', '_blank')">💬 FALAR COM LEAD</button>`;
+                    } 
+                    else {
+                        // CASO B: Outra agência comprou. Janela amarela, borrão MANTIDO e botão INATIVO!
+                        containerAcoes.innerHTML = `<button class="btn-inativo" disabled>⚠️ EM ATENDIMENTO POR OUTRA AGÊNCIA</button>`;
+                    }
+                }
+            });
+        }
+
+        // Consumo de crédito definitivo
         function selecionarLead(idCard) {
-            if (saldoCreditos <= 0) {
-                alert('Seu saldo de créditos acabou! Entre em contato com o suporte para renovar seu plano de R$ 49,90.');
+            if (sessoes[agenciaAtual].creditos <= 0) {
+                alert('Seu saldo de créditos acabou! Renove sua assinatura de R$ 49,90.');
                 return;
             }
 
-            saldoCreditos--;
-            txtCreditos.textContent = saldoCreditos;
-
+            sessoes[agenciaAtual].creditos--;
+            
             const card = document.getElementById(idCard);
-            card.classList.add('atendido');
+            card.setAttribute('data-comprador', agenciaAtual); // Registra quem é o dono exclusivo do lead
 
-            const primeiroNome = card.innerText.includes("Carlos") ? "Carlos" : "Mariana";
-            const ddd = card.innerText.includes("(41)") ? "5541" : "5511";
-            const numeroLimpo = ddd + card.getAttribute('data-whatsapp-final').replace('-', '');
-            const destino = card.getAttribute('data-destino');
-
-            const mensagem = encodeURIComponent(`Olá ${primeiroNome}, tudo bem? Sou o consultor parceiro do Guia do Viajante 42! Vi que você solicitou um orçamento de viagem para ${destino}. Vamos planejar?`);
-            const urlWhatsapp = `https://wa.me/${numeroLimpo}?text=${mensagem}`;
-
-            const containerAcoes = card.querySelector('.lead-actions');
-            containerAcoes.innerHTML = `
-                <button class="btn-whatsapp" onclick="window.open('${urlWhatsapp}', '_blank')">💬 FALAR COM LEAD</button>
-            `;
+            renderizarAquario();
         }
     </script>
 </body>
