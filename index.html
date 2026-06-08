@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Guia do Viajante 42 - Painel do Agente</title>
+    <title>Guia do Viajante 42 - Painel em Tempo Real</title>
     <style>
         /* --- Configurações Globais & Paleta Azul Escuro --- */
         * {
@@ -23,7 +23,6 @@
             padding: 20px;
         }
 
-        /* --- Telas de Login / Cadastro --- */
         .container {
             background-color: rgba(30, 41, 59, 0.7);
             backdrop-filter: blur(10px);
@@ -33,11 +32,6 @@
             width: 100%;
             max-width: 450px;
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
-            transition: max-width 0.3s ease;
-        }
-
-        .container.expanded {
-            max-width: 550px;
         }
 
         h1 {
@@ -60,16 +54,6 @@
 
         .form-group {
             margin-bottom: 1.25rem;
-        }
-
-        .form-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-        }
-
-        .form-grid .full-width {
-            grid-column: span 2;
         }
 
         label {
@@ -111,23 +95,7 @@
             margin-top: 1rem;
         }
 
-        button:hover {
-            opacity: 0.95;
-            transform: translateY(-1px);
-        }
-
-        .toggle-link {
-            text-align: center;
-            margin-top: 1.5rem;
-            font-size: 0.9rem;
-            color: #94a3b8;
-        }
-
-        .toggle-link span {
-            color: #38bdf8;
-            cursor: pointer;
-            font-weight: 500;
-        }
+        button:hover { opacity: 0.95; transform: translateY(-1px); }
 
         /* ================= TELA DO AQUÁRIO (PAINEL) ================= */
         .painel-container {
@@ -165,10 +133,7 @@
             gap: 0.5rem;
         }
 
-        .simulador-box label {
-            margin-bottom: 0;
-            color: #f8fafc;
-        }
+        .simulador-box label { margin-bottom: 0; color: #f8fafc; }
 
         .badge-creditos {
             background-color: #0f172a;
@@ -178,7 +143,6 @@
             font-size: 0.95rem;
             font-weight: 600;
             color: #38bdf8;
-            white-space: nowrap;
         }
 
         .grid-aquario {
@@ -188,7 +152,6 @@
         }
 
         /* --- ESTADOS DO CARD --- */
-        /* Verde: Lead Disponível */
         .card-lead {
             background: linear-gradient(135deg, #064e3b 0%, #022c22 100%);
             border: 2px solid #059669;
@@ -198,12 +161,9 @@
             display: flex;
             flex-direction: column;
             gap: 0.75rem;
-            position: relative;
-            overflow: hidden;
             transition: all 0.3s ease;
         }
 
-        /* Amarelo: Lead Em Atendimento (Para qualquer agência) */
         .card-lead.atendido {
             background: linear-gradient(135deg, #78350f 0%, #451a03 100%);
             border: 2px solid #d97706;
@@ -214,19 +174,13 @@
             color: #34d399;
             border-bottom: 1px solid rgba(52, 211, 153, 0.2);
             padding-bottom: 0.5rem;
-            margin-bottom: 0.25rem;
         }
 
-        .card-lead.atendido h3 { 
-            color: #fbbf24; 
-            border-bottom: 1px solid rgba(251, 191, 36, 0.2); 
-        }
-
+        .card-lead.atendido h3 { color: #fbbf24; border-bottom: 1px solid rgba(251, 191, 36, 0.2); }
         .lead-info { font-size: 0.95rem; color: #e2e8f0; }
         .lead-info strong { color: #a7f3d0; }
         .card-lead.atendido .lead-info strong { color: #fde68a; }
 
-        /* Controle do Efeito Borrado */
         .blur-data {
             filter: blur(5px);
             user-select: none;
@@ -236,7 +190,6 @@
             padding: 0 4px;
         }
 
-        /* Só remove o borrão se o card for explicitamente desborrado por QUEM comprou */
         .card-lead.atendido.revelado .blur-data {
             filter: none;
             user-select: text;
@@ -244,226 +197,202 @@
             padding: 0;
         }
 
-        /* --- Botões Customizados --- */
-        .btn-pescar {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            margin-top: 0.5rem;
-            box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.3);
-        }
-
-        .btn-whatsapp {
-            background: linear-gradient(135deg, #22c55e 0%, #15803d 100%);
-            box-shadow: 0 4px 6px -1px rgba(34, 197, 94, 0.3);
-            margin-top: 0.5rem;
-        }
-
-        .btn-inativo {
-            background: #2d1a0f !important;
-            border: 1px solid #78350f;
-            color: #d97706;
-            cursor: not-allowed;
-            margin-top: 0.5rem;
-            opacity: 0.6;
-        }
-
+        .btn-pescar { background: linear-gradient(135deg, #10b981 0%, #059669 100%); margin-top: 0.5rem;}
+        .btn-whatsapp { background: linear-gradient(135deg, #22c55e 0%, #15803d 100%); margin-top: 0.5rem; }
+        .btn-inativo { background: #2d1a0f !important; border: 1px solid #78350f; color: #d97706; cursor: not-allowed; margin-top: 0.5rem; opacity: 0.6; }
         .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
-    <!-- ================= CONTEINER DE AUTENTICAÇÃO ================= -->
+    <!-- CONTAINER DE LOGIN SIMPLIFICADO -->
     <div class="container" id="authContainer">
         <h1>Guia do Viajante 42</h1>
-        <p class="subtitle" id="formSubtitle">Painel de Agências Parceiras</p>
-
+        <p class="subtitle">Entrar no Aquário Realtime</p>
         <form id="loginForm">
             <div class="form-group">
-                <label for="loginUser">Nome de Usuário</label>
-                <input type="text" id="loginUser" placeholder="Ex: miraiturismo" required>
+                <label for="loginUser">Selecione sua Agência para o teste:</label>
+                <select id="loginUser">
+                    <option value="agencia1">Mirai Turismo (Agência A)</option>
+                    <option value="agencia2">Pinhais Viagens (Agência B)</option>
+                </select>
             </div>
-            <div class="form-group">
-                <label for="loginPassword">Senha</label>
-                <input type="password" id="loginPassword" placeholder="••••••••" required>
-            </div>
-            <button type="submit">Entrar no Aquário</button>
-            <div class="toggle-link">Não tem acesso? <span id="btnIrParaCadastro">Fazer cadastro</span></div>
-        </form>
-
-        <form id="registerForm" class="hidden">
-            <div class="form-grid">
-                <div class="form-group full-width">
-                    <label for="regNomeEmpresa">Nome da Empresa</label>
-                    <input type="text" id="regNomeEmpresa" placeholder="Nome da Agência" required>
-                </div>
-                <div class="form-group">
-                    <label for="regCNPJ">CNPJ</label>
-                    <input type="text" id="regCNPJ" placeholder="00.000.000/0001-00" required>
-                </div>
-                <div class="form-group">
-                    <label for="regWhatsapp">WhatsApp</label>
-                    <input type="tel" id="regWhatsapp" placeholder="41999999999" required>
-                </div>
-                <div class="form-group full-width">
-                    <label for="regEmail">E-mail</label>
-                    <input type="email" id="regEmail" placeholder="contato@empresa.com" required>
-                </div>
-                <div class="form-group">
-                    <label for="regUsername">Usuário</label>
-                    <input type="text" id="regUsername" placeholder="Ex: miraiturismo" required>
-                </div>
-                <div class="form-group">
-                    <label for="regPassword">Senha</label>
-                    <input type="password" id="regPassword" placeholder="••••••••" required>
-                </div>
-            </div>
-            <button type="submit">Solicitar Cadastro</button>
-            <div class="toggle-link">Já possui conta? <span id="btnIrParaLogin">Fazer login</span></div>
+            <button type="submit">Acessar Painel</button>
         </form>
     </div>
 
-    <!-- ================= TELA DO PAINEL ================= -->
+    <!-- TELA DO PAINEL -->
     <div class="painel-container hidden" id="painelAquario">
         <div class="painel-header">
             <div>
                 <h1>Aquário de Leads</h1>
-                <p style="color: #94a3b8;">Painel de Monitoramento Local</p>
+                <p style="color: #94a3b8;">Sincronizado via Firebase Realtime ⚡</p>
             </div>
-            
             <div class="header-meta">
-                <!-- Seletor para simular a visão das duas agências -->
                 <div class="simulador-box">
-                    <label for="selectAgencia">⚙️ Olhar painel como:</label>
-                    <select id="selectAgencia" onchange="alternarAgenciaSimulada()" style="width: auto; padding: 0.25rem 0.5rem; background: #0f172a;">
-                        <option value="agencia1">Mirai Turismo (Agência A)</option>
-                        <option value="agencia2">Pinhais Viagens (Agência B)</option>
-                    </select>
+                    <label>🏢 Logado como: <strong id="lblAgenciaLogada" style="color:#38bdf8;">-</strong></label>
                 </div>
-
-                <div class="badge-creditos">🪙 Créditos: <span id="txtCreditos">10</span></div>
+                <div class="badge-creditos">🪙 Créditos da Empresa: <span id="txtCreditos">10</span></div>
                 <button id="btnSair" style="width: auto; padding: 0.5rem 1rem; background: #334155; margin: 0;">Sair</button>
             </div>
         </div>
 
         <div class="grid-aquario" id="aquarioLeads">
-            
-            <!-- Lead 1 -->
-            <div class="card-lead" id="lead1" data-nome-completo="Silva" data-whatsapp-final="99123-4567" data-destino="Gramado / RS" data-comprador="">
-                <h3>✈️ Destino: Gramado / RS</h3>
-                <div class="lead-info">👤 <strong>Nome:</strong> Carlos <span class="blur-data">Silva</span></div>
-                <div class="lead-info">📱 <strong>WhatsApp:</strong> (41) 99123-<span class="blur-data">4567</span></div>
-                <div class="lead-info">👥 <strong>Passageiros:</strong> Casal (2 pessoas)</div>
-                <div class="lead-info">📅 <strong>Data Aprox:</strong> Julho de 2026</div>
-                <div class="lead-info">💰 <strong>Orçamento:</strong> Até R$ 150/mês</div>
-                <div class="lead-actions">
-                    <button class="btn-pescar" onclick="selecionarLead('lead1')">SELECIONAR LEAD (1C)</button>
-                </div>
-            </div>
-
-            <!-- Lead 2 -->
-            <div class="card-lead" id="lead2" data-nome-completo="Costa" data-whatsapp-final="98765-4321" data-destino="Porto de Galinhas" data-comprador="">
-                <h3>🏖️ Destino: Porto de Galinhas</h3>
-                <div class="lead-info">👤 <strong>Nome:</strong> Mariana <span class="blur-data">Costa</span></div>
-                <div class="lead-info">📱 <strong>WhatsApp:</strong> (11) 98765-<span class="blur-data">4321</span></div>
-                <div class="lead-info">👥 <strong>Passageiros:</strong> Família (4 pessoas)</div>
-                <div class="lead-info">📅 <strong>Data Aprox:</strong> Outubro de 2026</div>
-                <div class="lead-info">💰 <strong>Orçamento:</strong> Até R$ 250/mês</div>
-                <div class="lead-actions">
-                    <button class="btn-pescar" onclick="selecionarLead('lead2')">SELECIONAR LEAD (1C)</button>
-                </div>
-            </div>
-
+            <!-- Os cards serão gerados dinamicamente pelo Firebase aqui dentro -->
         </div>
     </div>
 
-    <script>
+    <!-- Importação dos módulos do Firebase (v10+) via CDN -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        // Credenciais reais do seu projeto do Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyCP2AmKW7NjQrKlfi5Wvx5VY0upEdy8XWo",
+            authDomain: "guia-do-viajante-42.firebaseapp.com",
+            databaseURL: "https://guia-do-viajante-42-default-rtdb.firebaseio.com",
+            projectId: "guia-do-viajante-42",
+            storageBucket: "guia-do-viajante-42.firebasestorage.app",
+            messagingSenderId: "948399809511",
+            appId: "1:948399809511:web:1cf2f183802ad3cc7c5342",
+            measurementId: "G-HWP2FC7V67"
+        };
+
+        // Inicializa o Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // Estrutura de simulação para resetar/criar os dados caso o banco comece vazio
+        const dadosIniciaisIniciais = {
+            agencias: {
+                agencia1: { nome: "Mirai Turismo", creditos: 10 },
+                agencia2: { nome: "Pinhais Viagens", creditos: 10 }
+            },
+            leads: {
+                lead1: { id: "lead1", destino: "Gramado / RS", nome: "Carlos", sobrenome: "Silva", whatsapp: "5541991234567", passageiros: "Casal (2 pessoas)", data: "Julho de 2026", orcamento: "Até R$ 3.000", comprador: "" },
+                lead2: { id: "lead2", destino: "Porto de Galinhas / PE", nome: "Mariana", sobrenome: "Costa", whatsapp: "5511987654321", passageiros: "Família (4 pessoas)", data: "Outubro de 2026", orcamento: "Até R$ 7.500", comprador: "" }
+            }
+        };
+
+        let SampleAgenciaId = "agencia1";
+        let dadosLocais = {};
+
+        // Elementos do DOM
         const authContainer = document.getElementById('authContainer');
         const painelAquario = document.getElementById('painelAquario');
         const loginForm = document.getElementById('loginForm');
-        const registerForm = document.getElementById('registerForm');
-        const btnSair = document.getElementById('btnSair');
-
-        // Banco de dados simulado para os saldos das agências
-        const sessoes = {
-            agencia1: { nome: "Mirai Turismo", creditos: 10 },
-            agencia2: { nome: "Pinhais Viagens", creditos: 10 }
-        };
-        let agenciaAtual = "agencia1";
-
+        const aquarioLeads = document.getElementById('aquarioLeads');
         const txtCreditos = document.getElementById('txtCreditos');
-        const selectAgencia = document.getElementById('selectAgencia');
+        const lblAgenciaLogada = document.getElementById('lblAgenciaLogada');
 
-        // Navegação básica
-        document.getElementById('btnIrParaCadastro').addEventListener('click', () => { loginForm.classList.add('hidden'); registerForm.classList.remove('hidden'); authContainer.classList.add('expanded'); });
-        document.getElementById('btnIrParaLogin').addEventListener('click', () => { registerForm.classList.add('hidden'); loginForm.classList.remove('hidden'); authContainer.classList.remove('expanded'); });
-        btnSair.addEventListener('click', () => { painelAquario.classList.add('hidden'); authContainer.classList.remove('hidden'); });
-
+        // Login simples para teste de tela
         loginForm.addEventListener('submit', (e) => {
             e.preventDefault();
+            SampleAgenciaId = document.getElementById('loginUser').value;
             authContainer.classList.add('hidden');
             painelAquario.classList.remove('hidden');
-            renderizarAquario();
+            
+            // Inicia a escuta ativa do Firebase Realtime
+            conectarAoFirebase();
         });
 
-        // Alterna entre os perfis das agências para testar a visão de cada uma
-        function alternarAgenciaSimulada() {
-            agenciaAtual = selectAgencia.value;
-            renderizarAquario();
-        }
+        document.getElementById('btnSair').addEventListener('click', () => {
+            painelAquario.classList.add('hidden');
+            authContainer.classList.remove('hidden');
+        });
 
-        // ================= ATUALIZAÇÃO REGRAS DO AQUÁRIO TRANSPARENTE =================
-        function renderizarAquario() {
-            txtCreditos.textContent = sessoes[agenciaAtual].creditos;
-            
-            const cards = document.querySelectorAll('.card-lead');
-            cards.forEach(card => {
-                const comprador = card.getAttribute('data-comprador');
-                const containerAcoes = card.querySelector('.lead-actions');
-                const idCard = card.id;
+        function conectarAoFirebase() {
+            const dbRef = ref(db, 'guia_viajante_42');
 
-                // Reseta os estados visuais padrão
-                card.classList.remove('atendido', 'revelado');
-
-                if (comprador === "") {
-                    // ESTADO: Verde e Livre
-                    containerAcoes.innerHTML = `<button class="btn-pescar" onclick="selecionarLead('${idCard}')">SELECIONAR LEAD (1C)</button>`;
-                } 
-                else {
-                    // AMBOS OS CASOS: A janela fica amarela para todo mundo
-                    card.classList.add('atendido');
-
-                    if (comprador === agenciaAtual) {
-                        // CASO A: Foi VOCÊ quem comprou. Janela amarela, dados abertos e botão WHATSAPP ativo!
-                        card.classList.add('revelado');
-                        
-                        const primeiroNome = idCard === "lead1" ? "Carlos" : "Mariana";
-                        const ddd = idCard === "lead1" ? "5541" : "5511";
-                        const numeroLimpo = ddd + card.getAttribute('data-whatsapp-final').replace('-', '');
-                        const destino = card.getAttribute('data-destino');
-                        const mensagem = encodeURIComponent(`Olá ${primeiroNome}, tudo bem? Sou o consultor parceiro do Guia do Viajante 42! Vi que você solicitou um orçamento de viagem para ${destino}. Vamos planejar?`);
-                        
-                        containerAcoes.innerHTML = `<button class="btn-whatsapp" onclick="window.open('https://wa.me/${numeroLimpo}?text=${mensagem}', '_blank')">💬 FALAR COM LEAD</button>`;
-                    } 
-                    else {
-                        // CASO B: Outra agência comprou. Janela amarela, borrão MANTIDO e botão INATIVO!
-                        containerAcoes.innerHTML = `<button class="btn-inativo" disabled>⚠️ EM ATENDIMENTO POR OUTRA AGÊNCIA</button>`;
-                    }
+            // Escuta em tempo real: roda no load e SEMPRE que qualquer dado mudar no servidor
+            onValue(dbRef, (snapshot) => {
+                const data = snapshot.val();
+                
+                // Popula o banco com dados iniciais se ele estiver zerado
+                if (!data) {
+                    set(dbRef, dadosIniciaisIniciais);
+                    return;
                 }
+
+                dadosLocais = data;
+                renderizarPainelRealtime();
             });
         }
 
-        // Consumo de crédito definitivo
-        function selecionarLead(idCard) {
-            if (sessoes[agenciaAtual].creditos <= 0) {
-                alert('Seu saldo de créditos acabou! Renove sua assinatura de R$ 49,90.');
+        function renderizarPainelRealtime() {
+            // Atualiza cabeçalho com dados da agência logada
+            const infoAgencia = dadosLocais.agencias[SampleAgenciaId];
+            lblAgenciaLogada.textContent = infoAgencia.nome;
+            txtCreditos.textContent = infoAgencia.creditos;
+
+            // Limpa o grid de cards
+            aquarioLeads.innerHTML = "";
+
+            // Cria os cards dinamicamente com base no estado do Firebase
+            Object.keys(dadosLocais.leads).forEach(key => {
+                const lead = dadosLocais.leads[key];
+                const card = document.createElement('div');
+                card.className = 'card-lead';
+                
+                let htmlAcoes = '';
+
+                if (lead.comprador === "") {
+                    // Estado: Livre para compra (Card Verde)
+                    htmlAcoes = `<button class="btn-pescar" data-id="${lead.id}">PESCAR LEAD (1 CRÉDITO)</button>`;
+                } else {
+                    // Estado: Já pescado (Card Amarelo/Laranja)
+                    card.classList.add('atendido');
+
+                    if (lead.comprador === SampleAgenciaId) {
+                        // Se você comprou: Revela as informações borradas e ativa o botão de ação
+                        card.classList.add('revelado');
+                        const msg = encodeURIComponent(`Olá ${lead.nome}, recebemos seu pedido de cotação para ${lead.destino} no Guia do Viajante! Vamos planejar?`);
+                        htmlAcoes = `<button class="btn-whatsapp" onclick="window.open('https://wa.me/${lead.whatsapp}?text=${msg}', '_blank')">💬 CHAMAR NO WHATSAPP</button>`;
+                    } else {
+                        // Se outra agência comprou: Bloqueia totalmente
+                        htmlAcoes = `<button class="btn-inativo" disabled>⚠️ EM ATENDIMENTO POR OUTRA AGÊNCIA</button>`;
+                    }
+                }
+
+                card.innerHTML = `
+                    <h3>✈️ Destino: ${lead.destino}</h3>
+                    <div class="lead-info">👤 <strong>Nome:</strong> ${lead.nome} <span class="blur-data">${lead.sobrenome}</span></div>
+                    <div class="lead-info">📱 <strong>WhatsApp:</strong> <span class="blur-data">${lead.whatsapp}</span></div>
+                    <div class="lead-info">👥 <strong>Passageiros:</strong> ${lead.passageiros}</div>
+                    <div class="lead-info">📅 <strong>Data Prevista:</strong> ${lead.data}</div>
+                    <div class="lead-info">💰 <strong>Orçamento Máx:</strong> ${lead.orcamento}</div>
+                    <div class="lead-actions">${htmlAcoes}</div>
+                `;
+
+                aquarioLeads.appendChild(card);
+            });
+
+            // Atribui os eventos de clique para os novos botões gerados
+            document.querySelectorAll('.btn-pescar').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const idLead = e.target.getAttribute('data-id');
+                    pescarLeadNoFirebase(idLead);
+                });
+            });
+        }
+
+        // Função que grava as alterações diretamente no banco do Firebase
+        window.pescarLeadNoFirebase = function(idLead) {
+            const agencia = dadosLocais.agencias[SampleAgenciaId];
+            
+            if (agencia.creditos <= 0) {
+                alert('Seu saldo de créditos corporativos acabou!');
                 return;
             }
 
-            sessoes[agenciaAtual].creditos--;
-            
-            const card = document.getElementById(idCard);
-            card.setAttribute('data-comprador', agenciaAtual); // Registra quem é o dono exclusivo do lead
+            // Executa uma atualização atômica (Multi-path update) no Firebase
+            const updates = {};
+            updates[`guia_viajante_42/leads/${idLead}/comprador`] = SampleAgenciaId;
+            updates[`guia_viajante_42/agencias/${SampleAgenciaId}/creditos`] = agencia.creditos - 1;
 
-            renderizarAquario();
+            // Envia ao servidor. A sincronização em todas as outras telas abertas ocorre no mesmo milissegundo.
+            update(ref(db), updates);
         }
     </script>
 </body>
