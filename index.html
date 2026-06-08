@@ -146,13 +146,29 @@
             padding-bottom: 1rem;
         }
 
-        .grid-aquario {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        .header-meta {
+            display: flex;
+            align-items: center;
             gap: 1.5rem;
         }
 
-        /* --- Janela em Tom Verde (Lead Disponível) --- */
+        .badge-creditos {
+            background-color: #1e293b;
+            border: 1px solid #38bdf8;
+            padding: 0.5rem 1rem;
+            border-radius: 30px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #38bdf8;
+        }
+
+        .grid-aquario {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1.5rem;
+        }
+
+        /* --- ESTADO 1: Janela em Tom Verde (Lead Disponível) --- */
         .card-lead {
             background: linear-gradient(135deg, #064e3b 0%, #022c22 100%);
             border: 2px solid #059669;
@@ -164,6 +180,13 @@
             gap: 0.75rem;
             position: relative;
             overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        /* --- ESTADO 2: Janela em Tom Amarelo (Lead em Atendimento) --- */
+        .card-lead.atendido {
+            background: linear-gradient(135deg, #78350f 0%, #451a03 100%);
+            border: 2px solid #d97706;
         }
 
         .card-lead h3 {
@@ -172,6 +195,12 @@
             border-bottom: 1px solid rgba(52, 211, 153, 0.2);
             padding-bottom: 0.5rem;
             margin-bottom: 0.25rem;
+            transition: all 0.3s ease;
+        }
+
+        .card-lead.atendido h3 {
+            color: #fbbf24;
+            border-bottom: 1px solid rgba(251, 191, 36, 0.2);
         }
 
         .lead-info {
@@ -183,20 +212,47 @@
             color: #a7f3d0;
         }
 
-        /* Efeito Borrado parcial para o final do nome/celular */
+        .card-lead.atendido .lead-info strong {
+            color: #fde68a;
+        }
+
+        /* Efeito Borrado parcial para proteção de dados */
         .blur-data {
             filter: blur(5px);
             user-select: none;
-            background-color: rgba(255,255,255,0.1);
+            background-color: rgba(255, 255, 255, 0.1);
             display: inline-block;
             border-radius: 4px;
             padding: 0 4px;
         }
 
+        /* Remove o borrão quando o card ganha a classe atendido */
+        .card-lead.atendido .blur-data {
+            filter: none;
+            user-select: text;
+            background-color: transparent;
+            padding: 0;
+        }
+
+        /* --- Botões do Card --- */
         .btn-pescar {
             background: linear-gradient(135deg, #10b981 0%, #059669 100%);
             margin-top: 0.5rem;
             box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-whatsapp {
+            background: linear-gradient(135deg, #22c55e 0%, #15803d 100%);
+            box-shadow: 0 4px 6px -1px rgba(34, 197, 94, 0.3);
+        }
+
+        .btn-liberar {
+            background: #475569;
+            margin-top: 0.25rem;
+        }
+
+        .btn-liberar:hover {
+            background: #334155;
         }
 
         .hidden {
@@ -206,10 +262,12 @@
 </head>
 <body>
 
+    <!-- ================= CONTEINER DE AUTENTICAÇÃO ================= -->
     <div class="container" id="authContainer">
         <h1>Guia do Viajante 42</h1>
         <p class="subtitle" id="formSubtitle">Painel de Agências Parceiras</p>
 
+        <!-- TELA DE LOGIN -->
         <form id="loginForm">
             <div class="form-group">
                 <label for="loginUser">Nome de Usuário</label>
@@ -228,6 +286,7 @@
             </div>
         </form>
 
+        <!-- TELA DE CADASTRO -->
         <form id="registerForm" class="hidden">
             <div class="form-grid">
                 <div class="form-group full-width">
@@ -262,40 +321,56 @@
         </form>
     </div>
 
+    <!-- ================= TELA DO PAINEL (O AQUÁRIO) ================= -->
     <div class="painel-container hidden" id="painelAquario">
         <div class="painel-header">
             <div>
                 <h1>Aquário de Leads</h1>
                 <p style="color: #94a3b8;">Bem-vindo ao Guia do Viajante 42</p>
             </div>
-            <button id="btnSair" style="width: auto; padding: 0.5rem 1rem; background: #334155; margin: 0;">Sair</button>
+            <div class="header-meta">
+                <!-- Mostrador de Créditos em Tempo Real -->
+                <div class="badge-creditos">🪙 Créditos: <span id="txtCreditos">3</span></div>
+                <button id="btnSair" style="width: auto; padding: 0.5rem 1rem; background: #334155; margin: 0;">Sair</button>
+            </div>
         </div>
 
+        <!-- Grade das janelas dos leads -->
         <div class="grid-aquario" id="aquarioLeads">
             
-            <div class="card-lead">
+            <!-- Lead 1 -->
+            <div class="card-lead" id="lead1" data-nome-completo="Silva" data-whatsapp-final="99123-4567" data-destino="Gramado / RS">
                 <h3>✈️ Destino: Gramado / RS</h3>
                 <div class="lead-info">👤 <strong>Nome:</strong> Carlos <span class="blur-data">Silva</span></div>
-                <div class="lead-info">📱 <strong>WhatsApp:</strong> (41) 99999-<span class="blur-data">9999</span></div>
+                <div class="lead-info">📱 <strong>WhatsApp:</strong> (41) 99123-<span class="blur-data">4567</span></div>
                 <div class="lead-info">👥 <strong>Passageiros:</strong> Casal (2 pessoas)</div>
                 <div class="lead-info">📅 <strong>Data Aprox:</strong> Julho de 2026</div>
                 <div class="lead-info">💰 <strong>Orçamento:</strong> Até R$ 150/mês</div>
-                <button class="btn-pescar">SELECIONAR LEAD</button>
+                
+                <!-- Bloco de Controle de Botões Dinâmicos -->
+                <div class="lead-actions">
+                    <button class="btn-pescar" onclick="selecionarLead('lead1')">SELECIONAR LEAD (1C)</button>
+                </div>
             </div>
 
-            <div class="card-lead">
+            <!-- Lead 2 -->
+            <div class="card-lead" id="lead2" data-nome-completo="Costa" data-whatsapp-final="98765-4321" data-destino="Porto de Galinhas">
                 <h3>🏖️ Destino: Porto de Galinhas</h3>
                 <div class="lead-info">👤 <strong>Nome:</strong> Mariana <span class="blur-data">Costa</span></div>
-                <div class="lead-info">📱 <strong>WhatsApp:</strong> (11) 98888-<span class="blur-data">8888</span></div>
+                <div class="lead-info">📱 <strong>WhatsApp:</strong> (11) 98765-<span class="blur-data">4321</span></div>
                 <div class="lead-info">👥 <strong>Passageiros:</strong> Família (4 pessoas)</div>
                 <div class="lead-info">📅 <strong>Data Aprox:</strong> Outubro de 2026</div>
                 <div class="lead-info">💰 <strong>Orçamento:</strong> Até R$ 250/mês</div>
-                <button class="btn-pescar">SELECIONAR LEAD</button>
+                
+                <div class="lead-actions">
+                    <button class="btn-pescar" onclick="selecionarLead('lead2')">SELECIONAR LEAD (1C)</button>
+                </div>
             </div>
 
         </div>
     </div>
 
+    <!-- --- Lógica do Sistema, Banco Sheets e Controle de Créditos --- -->
     <script>
         const authContainer = document.getElementById('authContainer');
         const painelAquario = document.getElementById('painelAquario');
@@ -307,6 +382,10 @@
         const btnIrParaCadastro = document.getElementById('btnIrParaCadastro');
         const btnIrParaLogin = document.getElementById('btnIrParaLogin');
         const btnSair = document.getElementById('btnSair');
+
+        // Estado do saldo da agência logada
+        let saldoCreditos = 3;
+        const txtCreditos = document.getElementById('txtCreditos');
 
         const googleScriptURL = 'https://script.google.com/macros/s/AKfycbzWaQtBzagrWw1E8862Sn353qCoJuOBIERCCC2Cfuzk0BFbtvjUhoCllY7K0vkm8a9n/exec';
 
@@ -369,14 +448,13 @@
             });
         });
 
-        // LÓGICA DE LOGIN (Para o MVP de Validação)
+        // Lógica de Login
         loginForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            
             const usuarioDigitado = document.getElementById('loginUser').value.trim();
             const senhaDigitada = document.getElementById('loginPassword').value;
-            
             const btnLogin = loginForm.querySelector('button[type="submit"]');
+            
             btnLogin.textContent = 'Verificando...';
             btnLogin.disabled = true;
 
@@ -386,13 +464,63 @@
                     painelAquario.classList.remove('hidden');
                     btnLogin.textContent = 'Entrar no Aquário';
                     btnLogin.disabled = false;
-                }, 800);
+                }, 600);
             } else {
-                alert('Usuário ou senha inválidos (mínimo 4 caracteres para a senha de teste).');
+                alert('Usuário ou senha inválidos.');
                 btnLogin.textContent = 'Entrar no Aquário';
                 btnLogin.disabled = false;
             }
         });
+
+        // ================= MECÂNICA DO AQUÁRIO (MUDANÇA DE ESTADOS) =================
+        
+        // 1. Ação de Pescar / Selecionar o Lead (Consome Crédito)
+        function selecionarLead(idCard) {
+            if (saldoCreditos <= 0) {
+                alert('Saldo de créditos insuficiente! Compre mais créditos para pescar novos leads.');
+                return;
+            }
+
+            // Subtrai o crédito e atualiza o topo
+            saldoCreditos--;
+            txtCreditos.textContent = saldoCreditos;
+
+            const card = document.getElementById(idCard);
+            card.classList.add('atendido'); // Ativa a cor amarela e limpa o CSS Blur
+
+            // Captura os dados estruturados para o WhatsApp
+            const primeiroNome = card.innerText.includes("Carlos") ? "Carlos" : "Mariana";
+            const ddd = card.innerText.includes("(41)") ? "5541" : "5511";
+            const numeroLimpo = ddd + card.getAttribute('data-whatsapp-final').replace('-', '');
+            const destino = card.getAttribute('data-destino');
+
+            // Monta o link da API do WhatsApp com mensagem comercial estruturada
+            const mensagem = encodeURIComponent(`Olá ${primeiroNome}, tudo bem? Aqui é o consultor parceiro do Guia do Viajante 42! Recebi seu pedido de orçamento para a viagem dos seus sonhos para ${destino}. Vamos montar seu roteiro personalizado?`);
+            const urlWhatsapp = `https://wa.me/${numeroLimpo}?text=${mensagem}`;
+
+            // Substitui o botão verde de Selecionar pelos botões de atendimento
+            const containerAcoes = card.querySelector('.lead-actions');
+            containerAcoes.innerHTML = `
+                <button class="btn-whatsapp" onclick="window.open('${urlWhatsapp}', '_blank')">💬 CHAMAR NO WHATSAPP</button>
+                <button class="btn-liberar" onclick="liberarLead('${idCard}')">🔄 LIBERAR LEAD (ESTORNO)</button>
+            `;
+        }
+
+        // 2. Ação de Liberar o Lead (Devolve o Crédito e volta a ficar Verde)
+        function liberarLead(idCard) {
+            // Estorna o crédito usado para a agência
+            saldoCreditos++;
+            txtCreditos.textContent = saldoCreditos;
+
+            const card = document.getElementById(idCard);
+            card.classList.remove('atendido'); // Remove a cor amarela (volta a ser verde) e ativa o Blur
+
+            // Reseta os botões para o estado inicial de Seleção
+            const containerAcoes = card.querySelector('.lead-actions');
+            containerAcoes.innerHTML = `
+                <button class="btn-pescar" onclick="selecionarLead('${idCard}')">SELECIONAR LEAD (1C)</button>
+            `;
+        }
     </script>
 </body>
 </html>
