@@ -34,7 +34,6 @@
             transition: max-width 0.3s ease;
         }
 
-        /* Responsividade para o formulário de cadastro que é maior */
         .container.expanded {
             max-width: 550px;
         }
@@ -63,7 +62,6 @@
             margin-bottom: 1.25rem;
         }
 
-        /* Layout em duas colunas para o cadastro ficar compacto */
         .form-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -150,7 +148,6 @@
             text-decoration: underline;
         }
 
-        /* --- Controle de Telas (Hidden) --- */
         .hidden {
             display: none !important;
         }
@@ -223,7 +220,7 @@
         </form>
     </div>
 
-    <!-- --- Lógica de Transição de Telas --- -->
+    <!-- --- Lógica de Interface e Integração Direta com Google Sheets --- -->
     <script>
         const container = document.getElementById('formContainer');
         const subtitle = document.getElementById('formSubtitle');
@@ -233,7 +230,10 @@
         const btnIrParaCadastro = document.getElementById('btnIrParaCadastro');
         const btnIrParaLogin = document.getElementById('btnIrParaLogin');
 
-        // Transição para a tela de Cadastro
+        // URL da sua API do Google Apps Script
+        const googleScriptURL = 'https://script.google.com/macros/s/AKfycbzWaQtBzagrWw1E8862Sn353qCoJuOBIERCCC2Cfuzk0BFbtvjUhoCllY7K0vkm8a9n/exec';
+
+        // Alternar para tela de Cadastro
         btnIrParaCadastro.addEventListener('click', () => {
             loginForm.classList.add('hidden');
             registerForm.classList.remove('hidden');
@@ -241,7 +241,7 @@
             subtitle.textContent = 'Crie a sua conta para acessar os leads';
         });
 
-        // Transição para a tela de Login
+        // Alternar para tela de Login
         btnIrParaLogin.addEventListener('click', () => {
             registerForm.classList.add('hidden');
             loginForm.classList.remove('hidden');
@@ -249,15 +249,57 @@
             subtitle.textContent = 'Painel de Agências Parceiras';
         });
 
-        // Interceptação dos Envios (Prevenção do F5 para os futuros nós do Firebase)
-        loginForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            console.log('Login submetido. Pronto para acenar para o Firebase Auth.');
-        });
-
+        // Evento de Envio do Cadastro (Direto para o Sheets)
         registerForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            console.log('Cadastro submetido. Pronto para salvar dados da agência no Firestore.');
+
+            // Monta o objeto com os dados dos inputs
+            const dadosAgencia = {
+                nome_empresa: document.getElementById('regNomeEmpresa').value,
+                cnpj: document.getElementById('regCNPJ').value,
+                whatsapp: document.getElementById('regWhatsapp').value,
+                email: document.getElementById('regEmail').value,
+                usuario: document.getElementById('regUsername').value,
+                senha: document.getElementById('regPassword').value,
+                data_cadastro: new Date().toLocaleString('pt-BR')
+            };
+
+            // Trava o botão para evitar cliques duplicados
+            const btnSubmit = registerForm.querySelector('button[type="submit"]');
+            const textoOriginal = btnSubmit.textContent;
+            btnSubmit.textContent = 'Enviando...';
+            btnSubmit.disabled = true;
+
+            // Dispara a requisição POST direto para o Google
+            fetch(googleScriptURL, {
+                method: 'POST',
+                mode: 'no-cors', // Evita bloqueios de CORS entre domínios diferentes
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(dadosAgencia)
+            })
+            .then(() => {
+                // Com 'no-cors' o browser não lê a resposta de sucesso, mas o disparo funciona perfeitamente
+                alert('Solicitação enviada com sucesso! Analisaremos seu cadastro.');
+                registerForm.reset();
+                btnIrParaLogin.click(); // Retorna o usuário para a tela de login
+            })
+            .catch(error => {
+                console.error('Erro de envio:', error);
+                alert('Ocorreu um erro ao processar seu cadastro. Tente novamente.');
+            })
+            .finally(() => {
+                // Libera o botão novamente
+                btnSubmit.textContent = textoOriginal;
+                btnSubmit.disabled = false;
+            });
+        });
+
+        // Interceptação temporária do Login (Próximo passo do projeto)
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            alert('A validação de login será integrada na próxima etapa com o banco de dados!');
         });
     </script>
 </body>
