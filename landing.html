@@ -3,30 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quero Viajar - Guia do Viajante 42</title>
+    <title>Sua Viagem dos Sonhos | Guia do Viajante 42</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
-        body { background: radial-gradient(circle at top, #1e293b 0%, #0f172a 100%); min-height: 100vh; display: flex; justify-content: center; align-items: center; color: #f8fafc; padding: 20px; }
-        .container { background-color: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); padding: 2rem; border-radius: 16px; width: 100%; max-width: 450px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
-        h1 { font-size: 1.8rem; text-align: center; margin-bottom: 0.5rem; color: #38bdf8; }
-        p { text-align: center; color: #94a3b8; margin-bottom: 1.5rem; }
+        body { background: #0f172a; color: #f8fafc; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .container { background: rgba(30, 41, 59, 0.8); backdrop-filter: blur(10px); padding: 2rem; border-radius: 16px; width: 100%; max-width: 500px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        
+        /* Mosaico de Imagens */
+        .gallery { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .gallery img { width: 100%; height: 100px; object-fit: cover; border-radius: 8px; }
+
+        h1 { font-size: 1.6rem; text-align: center; color: #38bdf8; margin-bottom: 0.5rem; }
         input { width: 100%; padding: 0.8rem; margin-bottom: 1rem; background: #0f172a; border: 1px solid #334155; border-radius: 8px; color: #fff; }
-        button { width: 100%; padding: 1rem; background: linear-gradient(135deg, #22c55e 0%, #15803d 100%); border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; transition: 0.3s; }
-        button:hover { opacity: 0.9; }
+        button { width: 100%; padding: 1rem; background: linear-gradient(135deg, #22c55e 0%, #15803d 100%); border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
 
 <div class="container">
+    <!-- Mosaico dinâmico -->
+    <div class="gallery">
+        <img src="https://images.unsplash.com/photo-1502602898657-3e91760cbb34" alt="Paris">
+        <img src="https://images.unsplash.com/photo-1533929736458-ca588d087964" alt="Praia">
+    </div>
+
     <h1>Planeje sua viagem!</h1>
-    <p>Preencha abaixo e receba orçamentos de agências especializadas.</p>
     <form id="leadForm">
         <input type="text" id="nome" placeholder="Seu Nome" required>
         <input type="text" id="origem" placeholder="Cidade de Origem" required>
-        <input type="text" id="destino" placeholder="Qual o seu destino dos sonhos?" required>
-        <input type="text" id="whatsapp" placeholder="WhatsApp (DDD+Número)" required>
-        <input type="text" id="passageiros" placeholder="Quantas pessoas vão viajar?" required>
-        <button type="submit">Quero receber orçamentos!</button>
+        <input type="text" id="destino" placeholder="Destino dos sonhos" required>
+        <input type="text" id="passageiros" placeholder="Número de passageiros" required>
+        <input type="text" id="data" placeholder="Data aproximada (Ex: Outubro/2026)" required>
+        <input type="text" id="orcamento" placeholder="Orçamento disponível (Ex: R$ 5.000)" required>
+        <input type="text" id="whatsapp" placeholder="WhatsApp (com DDD)" required>
+        <button type="submit">Solicitar Orçamentos</button>
     </form>
 </div>
 
@@ -34,12 +44,8 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    // MESMO CONFIG DO SEU PAINEL
-    const firebaseConfig = {
-        apiKey: "AIzaSyCP2AmKW7NjQrKlfi5Wvx5VY0upEdy8XWo",
-        databaseURL: "https://guia-do-viajante-42-default-rtdb.firebaseio.com",
-        projectId: "guia-do-viajante-42"
-    };
+    // Configuração Firebase (Mantenha igual ao seu index.html)
+    const firebaseConfig = { /* ... seus dados ... */ };
     const db = getDatabase(initializeApp(firebaseConfig));
 
     document.getElementById('leadForm').addEventListener('submit', async (e) => {
@@ -50,18 +56,16 @@
             nome: document.getElementById('nome').value.trim(),
             origem: document.getElementById('origem').value.trim(),
             destino: document.getElementById('destino').value.trim(),
-            whatsapp: document.getElementById('whatsapp').value.trim(),
             passageiros: document.getElementById('passageiros').value.trim(),
-            data: "A combinar",
-            orcamento: "A consultar",
+            data: document.getElementById('data').value.trim(),
+            orcamento: document.getElementById('orcamento').value.trim(),
+            whatsapp: document.getElementById('whatsapp').value.trim(),
             comprador: ""
         };
 
-        try {
-            await set(ref(db, `guia_viajante_42/leads/${idUnico}`), novoLead);
-            alert('Sucesso! Seu interesse foi registrado e as agências entrarão em contato em breve.');
-            document.getElementById('leadForm').reset();
-        } catch (err) { alert('Erro ao enviar, tente novamente.'); }
+        await set(ref(db, `guia_viajante_42/leads/${idUnico}`), novoLead);
+        alert('Cadastro realizado com sucesso!');
+        document.getElementById('leadForm').reset();
     });
 </script>
 </body>
