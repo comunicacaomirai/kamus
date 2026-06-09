@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Guia do Viajante 42 - Painel em Tempo Real</title>
     <style>
-        /* --- Configurações Globais & Paleta Azul Escuro --- */
         * {
             box-sizing: border-box;
             margin: 0;
@@ -130,8 +129,8 @@
         }
 
         button:hover { opacity: 0.95; transform: translateY(-1px); }
+        button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
-        /* ================= TELA DO AQUÁRIO & ADMIN ================= */
         .painel-container {
             width: 100%;
             max-width: 1200px;
@@ -180,13 +179,59 @@
             color: #38bdf8;
         }
 
+        .ordenacao-bar {
+            background: #1e293b;
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .ordenacao-label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+
+        .ordenacao-buttons {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .btn-order {
+            background: #0f172a;
+            border: 1px solid #334155;
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
+            margin-top: 0;
+            width: auto;
+            font-weight: 500;
+        }
+
+        .btn-order.active {
+            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+            border-color: #38bdf8;
+            color: white;
+        }
+
+        .btn-order:hover {
+            background: #334155;
+            transform: none;
+        }
+
         .grid-aquario {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
             gap: 1.5rem;
         }
 
-        /* --- ESTADOS DO CARD (LEADS) --- */
         .card-lead {
             background: linear-gradient(135deg, #064e3b 0%, #022c22 100%);
             border: 2px solid #059669;
@@ -196,6 +241,12 @@
             display: flex;
             flex-direction: column;
             gap: 0.75rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .card-lead:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4);
         }
 
         .card-lead.atendido {
@@ -223,7 +274,6 @@
             padding: 0 4px;
         }
 
-        /* O WhatsApp sempre fica borrado, mesmo após pescar */
         .whatsapp-blur {
             filter: blur(5px);
             user-select: none;
@@ -233,16 +283,10 @@
             padding: 0 4px;
         }
 
-        .card-lead.atendido.revelado .whatsapp-blur {
-            filter: blur(5px);
-            user-select: none;
-        }
-
         .btn-pescar { background: linear-gradient(135deg, #10b981 0%, #059669 100%); margin-top: 0.5rem;}
         .btn-whatsapp { background: linear-gradient(135deg, #22c55e 0%, #15803d 100%); margin-top: 0.5rem; }
         .btn-inativo { background: #2d1a0f !important; border: 1px solid #78350f; color: #d97706; cursor: not-allowed; margin-top: 0.5rem; opacity: 0.6; }
         
-        /* --- ESTILOS DA TABELA DE ADMIN --- */
         .table-container {
             background: rgba(30, 41, 59, 0.8);
             border-radius: 12px;
@@ -287,7 +331,6 @@
         .btn-release { background: #3b82f6; color: white; }
         .btn-delete { background: #dc2626; color: white; }
 
-        /* Estilos adicionais para o formulário inline de lead */
         .admin-form-inline {
             background: #1e293b;
             border: 1px solid rgba(255,255,255,0.1);
@@ -297,11 +340,11 @@
         }
 
         .hidden { display: none !important; }
+        .loading { opacity: 0.6; pointer-events: none; }
     </style>
 </head>
 <body>
 
-    <!-- PORTAL DE ACESSO -->
     <div class="container" id="authContainer">
         <h1>Guia do Viajante 42</h1>
         <p class="subtitle">Acesso ao Ecossistema de Leads</p>
@@ -312,7 +355,6 @@
             <button class="tab-btn" id="tabAdminBtn" style="color: #f43f5e;">PAINEL ADM</button>
         </div>
 
-        <!-- FORMULÁRIO DE LOGIN DA AGÊNCIA -->
         <form id="loginForm">
             <div class="form-group">
                 <label for="loginUser">Nome de Usuário:</label>
@@ -325,7 +367,6 @@
             <button type="submit">Acessar Painel</button>
         </form>
 
-        <!-- FORMULÁRIO DE CADASTRO DA AGÊNCIA -->
         <form id="cadastroForm" class="hidden">
             <div class="form-group">
                 <label for="cadNome">Nome da Agência:</label>
@@ -361,25 +402,23 @@
             <button type="submit" style="background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);">Solicitar Acesso</button>
         </form>
 
-        <!-- FORMULÁRIO DE LOGIN DO ADMINISTRADOR -->
         <form id="adminLoginForm" class="hidden">
             <div class="form-group">
-                <label for="adminUser">Usuário Master:</label>
-                <input type="text" id="adminUser" placeholder="Usuário do administrador" required>
+                <label for="adminUser">Email do Administrador:</label>
+                <input type="email" id="adminUser" placeholder="admin@guia42.com" required>
             </div>
             <div class="form-group">
-                <label for="adminPassword">Senha Master:</label>
-                <input type="password" id="adminPassword" placeholder="Senha do administrador" required>
+                <label for="adminPassword">Senha:</label>
+                <input type="password" id="adminPassword" placeholder="Sua senha de acesso" required>
             </div>
             <button type="submit" style="background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);">Entrar como Admin</button>
         </form>
     </div>
 
-    <!-- TELA DO PAINEL DAS AGÊNCIAS (AQUÁRIO) -->
     <div class="painel-container hidden" id="painelAquario">
         <div class="painel-header">
             <div>
-                <h1>Aquário de Leads</h1>
+                <h1>🐠 Aquário de Leads</h1>
                 <p style="color: #94a3b8;">Sincronizado via Firebase Realtime ⚡</p>
             </div>
             <div class="header-meta">
@@ -390,10 +429,20 @@
                 <button class="btnSair" style="width: auto; padding: 0.5rem 1rem; background: #334155; margin: 0;">Sair</button>
             </div>
         </div>
+
+        <div class="ordenacao-bar">
+            <div class="ordenacao-label">📊 Ordenar por:</div>
+            <div class="ordenacao-buttons">
+                <button class="btn-order active" data-order="chegada">🕐 Mais Recentes</button>
+                <button class="btn-order" data-order="dataViagem">📅 Próximas Viagens</button>
+                <button class="btn-order" data-order="orcamento">💰 Maior Orçamento</button>
+                <button class="btn-order" data-order="destino">📍 Destino (A-Z)</button>
+            </div>
+        </div>
+
         <div class="grid-aquario" id="aquarioLeads"></div>
     </div>
 
-    <!-- TELA DO PAINEL DE CONTROLE BACKEND -->
     <div class="painel-container hidden" id="painelAdmin">
         <div class="painel-header">
             <div>
@@ -405,108 +454,53 @@
             </div>
         </div>
 
-        <!-- Abas de Navegação Internas do Admin -->
         <div class="tabs" style="max-width: 400px; margin-bottom: 0;">
             <button class="tab-btn active" id="subTabAgencias">AGÊNCIAS</button>
             <button class="tab-btn" id="subTabLeads">LEADS</button>
         </div>
 
-        <!-- SUB-ABA 1: GERENCIAMENTO DE AGÊNCIAS -->
         <div id="sectionAdminAgencias" class="table-container">
             <table>
-                <thead>
-                    <tr>
-                        <th>Agência</th>
-                        <th>Usuário / Senha</th>
-                        <th>Contato</th>
-                        <th>Créditos</th>
-                        <th>Status</th>
-                        <th>Ações</th>
-                    </tr>
-                </thead>
-                <tbody id="listaAgenciasAdmin">
-                    <!-- Gerado dinamicamente -->
-                </tbody>
+                <thead><tr><th>Agência</th><th>Usuário / Senha</th><th>Contato</th><th>Créditos</th><th>Status</th><th>Ações</th></tr></thead>
+                <tbody id="listaAgenciasAdmin"></tbody>
             </table>
         </div>
 
-        <!-- SUB-ABA 2: GERENCIAMENTO E INSERÇÃO DE LEADS -->
         <div id="sectionAdminLeads" class="hidden">
-            <!-- Formulário Manual de Criação de Leads -->
             <div class="admin-form-inline">
                 <h3 style="margin-bottom: 1rem; color: #38bdf8;">🚀 Cadastrar Novo Lead Manualmente</h3>
                 <form id="adminCadastrarLeadForm">
                     <div class="form-row">
-                        <div class="form-group" style="flex: 2;">
-                            <label>Destino:</label>
-                            <input type="text" id="admLeadDestino" placeholder="Ex: Paris / França" required>
-                        </div>
-                        <div class="form-group" style="flex: 1;">
-                            <label>Nome do Lead:</label>
-                            <input type="text" id="admLeadNome" placeholder="Ex: Carlos" required>
-                        </div>
-                        <div class="form-group" style="flex: 1;">
-                            <label>Sobrenome:</label>
-                            <input type="text" id="admLeadSobrenome" placeholder="Ex: Silva">
-                        </div>
+                        <div class="form-group" style="flex: 2;"><label>Destino:</label><input type="text" id="admLeadDestino" placeholder="Ex: Paris / França" required></div>
+                        <div class="form-group" style="flex: 1;"><label>Nome:</label><input type="text" id="admLeadNome" placeholder="Ex: Carlos" required></div>
+                        <div class="form-group" style="flex: 1;"><label>Sobrenome:</label><input type="text" id="admLeadSobrenome" placeholder="Ex: Silva"></div>
                     </div>
                     <div class="form-row">
-                        <div class="form-group" style="flex: 1;">
-                            <label>Cidade de Origem:</label>
-                            <input type="text" id="admLeadCidadeOrigem" placeholder="Ex: São Paulo - SP" required>
-                        </div>
-                        <div class="form-group" style="flex: 1;">
-                            <label>WhatsApp (com DDD):</label>
-                            <input type="text" id="admLeadWhatsapp" placeholder="Ex: 5541991234567" required>
-                        </div>
-                        <div class="form-group" style="flex: 1;">
-                            <label>Passageiros:</label>
-                            <input type="text" id="admLeadPassageiros" placeholder="Ex: Casal (2 pessoas)" required>
-                        </div>
+                        <div class="form-group" style="flex: 1;"><label>Cidade de Origem:</label><input type="text" id="admLeadCidadeOrigem" placeholder="Ex: São Paulo - SP" required></div>
+                        <div class="form-group" style="flex: 1;"><label>WhatsApp:</label><input type="text" id="admLeadWhatsapp" placeholder="Ex: 5541991234567" required></div>
+                        <div class="form-group" style="flex: 1;"><label>Passageiros:</label><input type="text" id="admLeadPassageiros" placeholder="Ex: Casal (2 pessoas)" required></div>
                     </div>
                     <div class="form-row">
-                        <div class="form-group" style="flex: 1;">
-                            <label>Data da Viagem:</label>
-                            <input type="text" id="admLeadData" placeholder="Ex: Julho de 2026" required>
-                        </div>
-                        <div class="form-group" style="flex: 1;">
-                            <label>Orçamento Máx:</label>
-                            <input type="text" id="admLeadOrcamento" placeholder="Ex: Até R$ 5.000" required>
-                        </div>
+                        <div class="form-group" style="flex: 1;"><label>Data da Viagem:</label><input type="text" id="admLeadData" placeholder="Ex: Julho de 2026" required></div>
+                        <div class="form-group" style="flex: 1;"><label>Orçamento Máx:</label><input type="text" id="admLeadOrcamento" placeholder="Ex: Até R$ 5.000" required></div>
                     </div>
-                    <button type="submit" style="background: linear-gradient(135deg, #22c55e 0%, #15803d 100%); margin-top: 0.5rem;">Adicionar Lead no Aquário</button>
+                    <button type="submit">Adicionar Lead no Aquário</button>
                 </form>
             </div>
-
-            <!-- Tabela de Exibição e Moderação de Leads -->
             <div class="table-container">
                 <table>
-                    <thead>
-                        <tr>
-                            <th>Destino</th>
-                            <th>Lead</th>
-                            <th>Cidade Origem</th>
-                            <th>WhatsApp</th>
-                            <th>Info Adicional</th>
-                            <th>Comprador / Status</th>
-                            <th>Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody id="listaLeadsAdmin">
-                        <!-- Gerado dinamicamente -->
-                    </tbody>
+                    <thead><tr><th>Destino</th><th>Lead</th><th>Cidade Origem</th><th>WhatsApp</th><th>Info Adicional</th><th>Status</th><th>Ações</th></tr></thead>
+                    <tbody id="listaLeadsAdmin"></tbody>
                 </table>
             </div>
         </div>
-
     </div>
 
-    <!-- Importação dos módulos do Firebase (v10+) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, set, onValue, update, remove, get, child } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-        // Credenciais do seu projeto do Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyCP2AmKW7NjQrKlfi5Wvx5VY0upEdy8XWo",
             authDomain: "guia-do-viajante-42.firebaseapp.com",
@@ -520,32 +514,42 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
+        const auth = getAuth(app);
 
-        const ADMIN_USER_MASTER = "admin";
-        const ADMIN_PASS_MASTER = "4242"; 
+        // Lista de emails autorizados como administradores
+        const ADMIN_EMAILS = [
+            "admin@guia42.com",
+            "seu-email-aqui@gmail.com"  // ← Adicione quantos emails admin quiser
+        ];
 
         let LoggedAgenciaId = "";
         let dadosLocais = {};
+        let ordenacaoAtual = "chegada";
+        let adminLogado = false;
 
-        // Elementos do DOM
         const authContainer = document.getElementById('authContainer');
         const painelAquario = document.getElementById('painelAquario');
         const painelAdmin = document.getElementById('painelAdmin');
-        
         const loginForm = document.getElementById('loginForm');
         const cadastroForm = document.getElementById('cadastroForm');
         const adminLoginForm = document.getElementById('adminLoginForm');
-        
         const tabLoginBtn = document.getElementById('tabLoginBtn');
         const tabCadastroBtn = document.getElementById('tabCadastroBtn');
         const tabAdminBtn = document.getElementById('tabAdminBtn');
-
         const subTabAgencias = document.getElementById('subTabAgencias');
         const subTabLeads = document.getElementById('subTabLeads');
         const sectionAdminAgencias = document.getElementById('sectionAdminAgencias');
         const sectionAdminLeads = document.getElementById('sectionAdminLeads');
 
-        // Navegação das abas externas do portal
+        document.querySelectorAll('.btn-order').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.btn-order').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                ordenacaoAtual = btn.getAttribute('data-order');
+                if (!adminLogado) renderizarPainelAgencia();
+            });
+        });
+
         tabLoginBtn.addEventListener('click', () => { alterAba(tabLoginBtn, loginForm); });
         tabCadastroBtn.addEventListener('click', () => { alterAba(tabCadastroBtn, cadastroForm); });
         tabAdminBtn.addEventListener('click', () => { alterAba(tabAdminBtn, adminLoginForm); });
@@ -557,7 +561,6 @@
             formularioAtivo.classList.remove('hidden');
         }
 
-        // Navegação das Sub-Abas Internas do Administrador
         subTabAgencias.addEventListener('click', () => {
             subTabAgencias.classList.add('active');
             subTabLeads.classList.remove('active');
@@ -572,7 +575,6 @@
             sectionAdminAgencias.classList.add('hidden');
         });
 
-        // 1. REGISTRO DE AGÊNCIA
         cadastroForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const nome = document.getElementById('cadNome').value.trim();
@@ -581,12 +583,7 @@
             const email = document.getElementById('cadEmail').value.trim();
             const usuario = document.getElementById('cadUser').value.trim().toLowerCase().replace(/\s+/g, '');
             const senha = document.getElementById('cadPassword').value;
-
-            const dadosAgencia = {
-                id: usuario, nome, cnpj, whatsapp, email, usuario, senha,
-                creditos: 0, status: "bloqueado"
-            };
-
+            const dadosAgencia = { id: usuario, nome, cnpj, whatsapp, email, usuario, senha, creditos: 0, status: "bloqueado" };
             try {
                 const snapshot = await get(child(ref(db), `guia_viajante_42/agencias/${usuario}`));
                 if (snapshot.exists()) { alert('Usuário já existente!'); return; }
@@ -597,11 +594,9 @@
             } catch (err) { alert('Erro no cadastro.'); }
         });
 
-        // 2. INSERÇÃO MANUAL DE LEADS PELO ADMINISTRADOR (COM CIDADE DE ORIGEM)
         document.getElementById('adminCadastrarLeadForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const idUnico = "lead_" + Date.now();
-
             const novoLead = {
                 id: idUnico,
                 destino: document.getElementById('admLeadDestino').value.trim(),
@@ -612,9 +607,9 @@
                 passageiros: document.getElementById('admLeadPassageiros').value.trim(),
                 data: document.getElementById('admLeadData').value.trim(),
                 orcamento: document.getElementById('admLeadOrcamento').value.trim(),
-                comprador: ""
+                comprador: "",
+                timestamp: Date.now()
             };
-
             try {
                 await set(ref(db, `guia_viajante_42/leads/${idUnico}`), novoLead);
                 alert('Lead inserido com sucesso no aquário!');
@@ -622,49 +617,92 @@
             } catch (err) { alert('Erro ao inserir o lead.'); }
         });
 
-        // 3. LOGIN DA AGÊNCIA
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const user = document.getElementById('loginUser').value.trim().toLowerCase();
             const pass = document.getElementById('loginPassword').value;
-
             try {
                 const snapshot = await get(child(ref(db), `guia_viajante_42/agencias/${user}`));
                 if (snapshot.exists()) {
                     const agencia = snapshot.val();
                     if (agencia.senha === pass) {
-                        if (agencia.status === "bloqueado") {
-                            alert('Sua conta aguarda liberação administrativa.'); return;
-                        }
+                        if (agencia.status === "bloqueado") { alert('Sua conta aguarda liberação administrativa.'); return; }
                         LoggedAgenciaId = user;
                         authContainer.classList.add('hidden');
                         painelAquario.classList.remove('hidden');
+                        adminLogado = false;
                         conectarAoFirebaseRealtime(false);
                     } else { alert('Senha incorreta!'); }
                 } else { alert('Usuário não encontrado!'); }
             } catch (err) { alert('Erro de rede.'); }
         });
 
-        // 4. LOGIN DO MASTER ADMIN
-        adminLoginForm.addEventListener('submit', (e) => {
+        // NOVO LOGIN ADMIN COM FIREBASE AUTH
+        adminLoginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const user = document.getElementById('adminUser').value.trim();
-            const pass = document.getElementById('adminPassword').value;
+            const email = document.getElementById('adminUser').value.trim();
+            const password = document.getElementById('adminPassword').value;
+            
+            const submitBtn = adminLoginForm.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerText;
+            submitBtn.innerText = '🔐 Autenticando...';
+            submitBtn.disabled = true;
 
-            if (user === ADMIN_USER_MASTER && pass === ADMIN_PASS_MASTER) {
-                authContainer.classList.add('hidden');
-                painelAdmin.classList.remove('hidden');
-                conectarAoFirebaseRealtime(true);
-            } else { alert('Acesso Administrativo Negado!'); }
+            try {
+                // Autenticar no Firebase
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                const userEmail = userCredential.user.email;
+                
+                // Verificar se o email está na lista de administradores
+                if (ADMIN_EMAILS.includes(userEmail)) {
+                    adminLogado = true;
+                    authContainer.classList.add('hidden');
+                    painelAdmin.classList.remove('hidden');
+                    conectarAoFirebaseRealtime(true);
+                    adminLoginForm.reset();
+                } else {
+                    // Se não for admin, desloga imediatamente
+                    await signOut(auth);
+                    alert('❌ Acesso negado. Você não tem permissão de administrador.');
+                }
+            } catch (error) {
+                console.error('Erro de autenticação:', error);
+                let mensagem = '❌ Falha no login. ';
+                switch(error.code) {
+                    case 'auth/user-not-found':
+                        mensagem += 'Email não encontrado.';
+                        break;
+                    case 'auth/wrong-password':
+                        mensagem += 'Senha incorreta.';
+                        break;
+                    case 'auth/invalid-email':
+                        mensagem += 'Email inválido.';
+                        break;
+                    default:
+                        mensagem += 'Verifique suas credenciais.';
+                }
+                alert(mensagem);
+            } finally {
+                submitBtn.innerText = originalText;
+                submitBtn.disabled = false;
+            }
         });
 
-        // Logout
+        // LOGOUT melhorado
         document.querySelectorAll('.btnSair').forEach(btn => {
-            btn.addEventListener('click', () => {
+            btn.addEventListener('click', async () => {
                 painelAquario.classList.add('hidden');
                 painelAdmin.classList.add('hidden');
                 authContainer.classList.remove('hidden');
-                loginForm.reset(); adminLoginForm.reset();
+                loginForm.reset(); 
+                adminLoginForm.reset();
+                
+                // Se estava logado como admin, desloga do Firebase Auth
+                if (adminLogado) {
+                    await signOut(auth);
+                    adminLogado = false;
+                }
+                LoggedAgenciaId = "";
             });
         });
 
@@ -680,7 +718,31 @@
             });
         }
 
-        // RENDERIZADOR: Aquário de Leads (Visão da Agência) - WhatsApp sempre borrado
+        function extrairValorOrcamento(orcamentoStr) {
+            if (!orcamentoStr) return 0;
+            const match = orcamentoStr.match(/\d+(?:\.\d+)?/g);
+            if (match) {
+                let valor = parseFloat(match.join('').replace(/\./g, ''));
+                return isNaN(valor) ? 0 : valor;
+            }
+            return 0;
+        }
+
+        function extrairDataViagem(dataStr) {
+            if (!dataStr) return null;
+            const meses = { 'janeiro':0, 'fevereiro':1, 'março':2, 'abril':3, 'maio':4, 'junho':5, 'julho':6, 'agosto':7, 'setembro':8, 'outubro':9, 'novembro':10, 'dezembro':11 };
+            const lowerData = dataStr.toLowerCase();
+            for (let [mes, idx] of Object.entries(meses)) {
+                if (lowerData.includes(mes)) {
+                    const anoMatch = lowerData.match(/\d{4}/);
+                    if (anoMatch) return new Date(parseInt(anoMatch[0]), idx, 1).getTime();
+                }
+            }
+            const partes = dataStr.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+            if (partes) return new Date(partes[3], partes[2]-1, partes[1]).getTime();
+            return null;
+        }
+
         function renderizarPainelAgencia() {
             const infoAgencia = dadosLocais.agencias ? dadosLocais.agencias[LoggedAgenciaId] : null;
             if (infoAgencia) {
@@ -688,18 +750,37 @@
                 document.getElementById('txtCreditos').textContent = infoAgencia.creditos;
             }
 
+            if (!dadosLocais.leads) {
+                document.getElementById('aquarioLeads').innerHTML = '<p style="text-align:center; color:#94a3b8;">Nenhum lead disponível no momento.</p>';
+                return;
+            }
+
+            let leadsArray = Object.keys(dadosLocais.leads).map(key => ({
+                ...dadosLocais.leads[key],
+                idOriginal: key,
+                timestamp: dadosLocais.leads[key].timestamp || 0,
+                valorOrcamento: extrairValorOrcamento(dadosLocais.leads[key].orcamento),
+                dataViagemTimestamp: extrairDataViagem(dadosLocais.leads[key].data)
+            }));
+
+            switch(ordenacaoAtual) {
+                case "chegada": leadsArray.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)); break;
+                case "dataViagem": leadsArray.sort((a, b) => (a.dataViagemTimestamp || 9999999999999) - (b.dataViagemTimestamp || 9999999999999)); break;
+                case "orcamento": leadsArray.sort((a, b) => b.valorOrcamento - a.valorOrcamento); break;
+                case "destino": leadsArray.sort((a, b) => (a.destino || '').localeCompare(b.destino || '')); break;
+                default: leadsArray.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+            }
+
             const aquarioLeads = document.getElementById('aquarioLeads');
             aquarioLeads.innerHTML = "";
-            if (!dadosLocais.leads) return;
 
-            Object.keys(dadosLocais.leads).forEach(key => {
-                const lead = dadosLocais.leads[key];
+            leadsArray.forEach(lead => {
                 const card = document.createElement('div');
                 card.className = 'card-lead';
                 let htmlAcoes = '';
 
                 if (!lead.comprador || lead.comprador === "") {
-                    htmlAcoes = `<button class="btn-pescar" data-id="${lead.id}">PESCAR LEAD (1 CRÉDITO)</button>`;
+                    htmlAcoes = `<button class="btn-pescar" data-id="${lead.id}">🎣 PESCAR LEAD (1 CRÉDITO)</button>`;
                 } else {
                     card.classList.add('atendido');
                     if (lead.comprador === LoggedAgenciaId) {
@@ -711,9 +792,8 @@
                     }
                 }
 
-                // WhatsApp sempre com classe whatsapp-blur (borrado)
                 card.innerHTML = `
-                    <h3>✈️ Destino: ${lead.destino}</h3>
+                    <h3>✈️ ${lead.destino}</h3>
                     <div class="lead-info">👤 <strong>Nome:</strong> ${lead.nome} <span class="blur-data">${lead.sobrenome || ''}</span></div>
                     <div class="lead-info">📍 <strong>Cidade de Origem:</strong> ${lead.cidadeOrigem || 'Não informada'}</div>
                     <div class="lead-info">📱 <strong>WhatsApp:</strong> <span class="whatsapp-blur">${lead.whatsapp}</span></div>
@@ -721,6 +801,7 @@
                     <div class="lead-info">📅 <strong>Data:</strong> ${lead.data}</div>
                     <div class="lead-info">💰 <strong>Orçamento:</strong> ${lead.orcamento}</div>
                     <div class="lead-actions">${htmlAcoes}</div>
+                    <div class="badge-chegada">🕐 Chegou em: ${new Date(lead.timestamp).toLocaleDateString('pt-BR')}</div>
                 `;
                 aquarioLeads.appendChild(card);
             });
@@ -739,7 +820,6 @@
             });
         }
 
-        // RENDERIZADOR MASTER ADMIN 1: Gerenciamento de Agências (Com botão Excluir incluído)
         function renderizarPainelAdminAgencias() {
             const listaAdmin = document.getElementById('listaAgenciasAdmin');
             listaAdmin.innerHTML = "";
@@ -751,31 +831,12 @@
             Object.keys(dadosLocais.agencias).forEach(key => {
                 const ag = dadosLocais.agencias[key];
                 const tr = document.createElement('tr');
-
-                const statusBadge = ag.status === 'bloqueado' 
-                    ? `<span style="color:#ef4444; font-weight:bold;">🔴 Bloqueado</span>`
-                    : `<span style="color:#22c55e; font-weight:bold;">🟢 Ativo</span>`;
-
-                const btnStatus = ag.status === 'bloqueado'
-                    ? `<button class="btn-action btn-unblock" data-id="${ag.id}" data-action="ativar">🔓 Liberar</button>`
-                    : `<button class="btn-action btn-block" data-id="${ag.id}" data-action="bloquear">🔒 Bloquear</button>`;
-
-                tr.innerHTML = `
-                    <td><strong>${ag.nome}</strong><br><small style="color:#94a3b8">CNPJ: ${ag.cnpj}</small></td>
-                    <td><code>${ag.usuario}</code><br><small style="color:#94a3b8">Senha: ${ag.senha}</small></td>
-                    <td>📱 ${ag.whatsapp}<br>✉️ ${ag.email}</td>
-                    <td style="font-size:1.1rem; font-weight:bold; color:#eab308">🪙 ${ag.creditos}</td>
-                    <td>${statusBadge}</td>
-                    <td>
-                        ${btnStatus}
-                        <button class="btn-action btn-credit" data-id="${ag.id}" data-action="credito">➕ Crédito</button>
-                        <button class="btn-action btn-delete" data-id="${ag.id}" data-action="excluir_agencia" style="margin-left: 5px;">🗑️ Excluir</button>
-                    </td>
-                `;
+                const statusBadge = ag.status === 'bloqueado' ? `<span style="color:#ef4444;">🔴 Bloqueado</span>` : `<span style="color:#22c55e;">🟢 Ativo</span>`;
+                const btnStatus = ag.status === 'bloqueado' ? `<button class="btn-action btn-unblock" data-id="${ag.id}" data-action="ativar">🔓 Liberar</button>` : `<button class="btn-action btn-block" data-id="${ag.id}" data-action="bloquear">🔒 Bloquear</button>`;
+                tr.innerHTML = `<td><strong>${ag.nome}</strong><br><small>CNPJ: ${ag.cnpj}</small></td><td><code>${ag.usuario}</code><br><small>Senha: ${ag.senha}</small></td><td>📱 ${ag.whatsapp}<br>✉️ ${ag.email}</td><td style="color:#eab308">🪙 ${ag.creditos}</td><td>${statusBadge}</td><td>${btnStatus}<button class="btn-action btn-credit" data-id="${ag.id}" data-action="credito">➕ Crédito</button><button class="btn-action btn-delete" data-id="${ag.id}" data-action="excluir_agencia">🗑️ Excluir</button></td>`;
                 listaAdmin.appendChild(tr);
             });
-
-             mapearCliquesAdminAgencias();
+            mapearCliquesAdminAgencias();
         }
 
         function mapearCliquesAdminAgencias() {
@@ -786,66 +847,42 @@
                 btn.addEventListener('click', (e) => {
                     const idAgencia = e.target.getAttribute('data-id');
                     const acao = e.target.getAttribute('data-action');
-
-                    if (acao === "ativar") {
-                        update(ref(db), { [`guia_viajante_42/agencias/${idAgencia}/status`]: "ativo" });
-                    } else if (acao === "bloquear") {
-                        update(ref(db), { [`guia_viajante_42/agencias/${idAgencia}/status`]: "bloqueado" });
-                    } else if (acao === "credito") {
+                    if (acao === "ativar") update(ref(db), { [`guia_viajante_42/agencias/${idAgencia}/status`]: "ativo" });
+                    else if (acao === "bloquear") update(ref(db), { [`guia_viajante_42/agencias/${idAgencia}/status`]: "bloqueado" });
+                    else if (acao === "credito") {
                         const qtd = prompt("Quantos créditos deseja ADICIONAR?", "10");
                         if (qtd && !isNaN(qtd)) {
                             const atuais = dadosLocais.agencias[idAgencia].creditos || 0;
                             update(ref(db), { [`guia_viajante_42/agencias/${idAgencia}/creditos`]: atuais + parseInt(qtd) });
                         }
                     } else if (acao === "excluir_agencia") {
-                        const nomeAg = dadosLocais.agencias[idAgencia].nome;
-                        if (confirm(`⚠️ ATENÇÃO: Tem certeza que deseja deletar permanentemente a agência "${nomeAg}"? Esta ação não pode ser desfeita.`)) {
-                            remove(ref(db), `guia_viajante_42/agencias/${idAgencia}`)
-                                .then(() => alert("Agência removida com sucesso!"))
-                                .catch(() => alert("Erro ao remover agência."));
+                        if (confirm(`⚠️ Tem certeza que deseja deletar permanentemente esta agência?`)) {
+                            remove(ref(db), `guia_viajante_42/agencias/${idAgencia}`);
                         }
                     }
                 });
             });
         }
 
-        // RENDERIZADOR MASTER ADMIN 2: Gerenciamento Total de Leads (COM CIDADE DE ORIGEM)
         function renderizarPainelAdminLeads() {
             const listaLeadsAdmin = document.getElementById('listaLeadsAdmin');
             listaLeadsAdmin.innerHTML = "";
-
             if (!dadosLocais.leads || Object.keys(dadosLocais.leads).length === 0) {
-                listaLeadsAdmin.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#94a3b8;">Nenhum lead cadastrado no momento.</td></tr>`;
+                listaLeadsAdmin.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#94a3b8;">Nenhum lead cadastrado.</td></tr>`;
                 return;
             }
-
             Object.keys(dadosLocais.leads).forEach(key => {
                 const lead = dadosLocais.leads[key];
                 const tr = document.createElement('tr');
-
-                let statusLead = `<span style="color:#22c55e; font-weight:bold;">🟢 Disponível (Livre)</span>`;
+                let statusLead = `<span style="color:#22c55e;">🟢 Disponível</span>`;
                 let btnLiberar = '';
-
                 if (lead.comprador && lead.comprador !== "") {
-                    statusLead = `<span style="color:#eab308; font-weight:bold;">⚠️ Pescado por: <code>${lead.comprador}</code></span>`;
-                    btnLiberar = `<button class="btn-action btn-release" data-id="${lead.id}" data-action="liberar">🔄 Liberar Lead</button>`;
+                    statusLead = `<span style="color:#eab308;">⚠️ Pescado por: ${lead.comprador}</span>`;
+                    btnLiberar = `<button class="btn-action btn-release" data-id="${lead.id}" data-action="liberar">🔄 Liberar</button>`;
                 }
-
-                tr.innerHTML = `
-                    <td><strong>${lead.destino}</strong></td>
-                    <td>👤 ${lead.nome} ${lead.sobrenome || ''}</td>
-                    <td>📍 ${lead.cidadeOrigem || 'Não informada'}</td>
-                    <td>📱 <code>${lead.whatsapp}</code></td>
-                    <td><small>👥 ${lead.passageiros}<br>📅 ${lead.data}<br>💰 ${lead.orcamento}</small></td>
-                    <td>${statusLead}</td>
-                    <td>
-                        ${btnLiberar}
-                        <button class="btn-action btn-delete" data-id="${lead.id}" data-action="excluir">🗑️ Excluir</button>
-                    </td>
-                `;
+                tr.innerHTML = `<td><strong>${lead.destino}</strong></td><td>👤 ${lead.nome} ${lead.sobrenome || ''}</td><td>📍 ${lead.cidadeOrigem || '-'}</td><td>📱 ${lead.whatsapp}</td><td><small>👥 ${lead.passageiros}<br>📅 ${lead.data}<br>💰 ${lead.orcamento}</small></td><td>${statusLead}</td><td>${btnLiberar}<button class="btn-action btn-delete" data-id="${lead.id}" data-action="excluir">🗑️ Excluir</button></td>`;
                 listaLeadsAdmin.appendChild(tr);
             });
-
             mapearCliquesAdminLeads();
         }
 
@@ -857,16 +894,8 @@
                 btn.addEventListener('click', (e) => {
                     const idLead = e.target.getAttribute('data-id');
                     const acao = e.target.getAttribute('data-action');
-
-                    if (acao === "liberar") {
-                        if (confirm("Tem certeza que deseja liberar este lead? Ele voltará a ficar disponível e verde para todas as agências.")) {
-                            update(ref(db), { [`guia_viajante_42/leads/${idLead}/comprador`]: "" });
-                        }
-                    } else if (acao === "excluir") {
-                        if (confirm("ATENÇÃO: Deseja deletar este lead permanentemente? Ele sumirá de todo o sistema.")) {
-                            remove(ref(db), `guia_viajante_42/leads/${idLead}`);
-                        }
-                    }
+                    if (acao === "liberar") update(ref(db), { [`guia_viajante_42/leads/${idLead}/comprador`]: "" });
+                    else if (acao === "excluir") remove(ref(db), `guia_viajante_42/leads/${idLead}`);
                 });
             });
         }
