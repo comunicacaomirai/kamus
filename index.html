@@ -182,7 +182,7 @@
 
         .grid-aquario {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
             gap: 1.5rem;
         }
 
@@ -223,11 +223,19 @@
             padding: 0 4px;
         }
 
-        .card-lead.atendido.revelado .blur-data {
-            filter: none;
-            user-select: text;
-            background-color: transparent;
-            padding: 0;
+        /* O WhatsApp sempre fica borrado, mesmo após pescar */
+        .whatsapp-blur {
+            filter: blur(5px);
+            user-select: none;
+            background-color: rgba(255, 255, 255, 0.1);
+            display: inline-block;
+            border-radius: 4px;
+            padding: 0 4px;
+        }
+
+        .card-lead.atendido.revelado .whatsapp-blur {
+            filter: blur(5px);
+            user-select: none;
         }
 
         .btn-pescar { background: linear-gradient(135deg, #10b981 0%, #059669 100%); margin-top: 0.5rem;}
@@ -444,6 +452,10 @@
                     </div>
                     <div class="form-row">
                         <div class="form-group" style="flex: 1;">
+                            <label>Cidade de Origem:</label>
+                            <input type="text" id="admLeadCidadeOrigem" placeholder="Ex: São Paulo - SP" required>
+                        </div>
+                        <div class="form-group" style="flex: 1;">
                             <label>WhatsApp (com DDD):</label>
                             <input type="text" id="admLeadWhatsapp" placeholder="Ex: 5541991234567" required>
                         </div>
@@ -451,6 +463,8 @@
                             <label>Passageiros:</label>
                             <input type="text" id="admLeadPassageiros" placeholder="Ex: Casal (2 pessoas)" required>
                         </div>
+                    </div>
+                    <div class="form-row">
                         <div class="form-group" style="flex: 1;">
                             <label>Data da Viagem:</label>
                             <input type="text" id="admLeadData" placeholder="Ex: Julho de 2026" required>
@@ -471,6 +485,7 @@
                         <tr>
                             <th>Destino</th>
                             <th>Lead</th>
+                            <th>Cidade Origem</th>
                             <th>WhatsApp</th>
                             <th>Info Adicional</th>
                             <th>Comprador / Status</th>
@@ -582,7 +597,7 @@
             } catch (err) { alert('Erro no cadastro.'); }
         });
 
-        // 2. INSERÇÃO MANUAL DE LEADS PELO ADMINISTRADOR
+        // 2. INSERÇÃO MANUAL DE LEADS PELO ADMINISTRADOR (COM CIDADE DE ORIGEM)
         document.getElementById('adminCadastrarLeadForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const idUnico = "lead_" + Date.now();
@@ -592,6 +607,7 @@
                 destino: document.getElementById('admLeadDestino').value.trim(),
                 nome: document.getElementById('admLeadNome').value.trim(),
                 sobrenome: document.getElementById('admLeadSobrenome').value.trim(),
+                cidadeOrigem: document.getElementById('admLeadCidadeOrigem').value.trim(),
                 whatsapp: document.getElementById('admLeadWhatsapp').value.trim(),
                 passageiros: document.getElementById('admLeadPassageiros').value.trim(),
                 data: document.getElementById('admLeadData').value.trim(),
@@ -664,7 +680,7 @@
             });
         }
 
-        // RENDERIZADOR: Aquário de Leads (Visão da Agência)
+        // RENDERIZADOR: Aquário de Leads (Visão da Agência) - WhatsApp sempre borrado
         function renderizarPainelAgencia() {
             const infoAgencia = dadosLocais.agencias ? dadosLocais.agencias[LoggedAgenciaId] : null;
             if (infoAgencia) {
@@ -688,17 +704,19 @@
                     card.classList.add('atendido');
                     if (lead.comprador === LoggedAgenciaId) {
                         card.classList.add('revelado');
-                        const msg = encodeURIComponent(`Olá ${lead.nome}, temos sua cotação para ${lead.destino}!`);
+                        const msg = encodeURIComponent(`Olá ${lead.nome}, sou da agência ${infoAgencia?.nome || 'Guia do Viajante'}. Recebemos sua solicitação de viagem para ${lead.destino} com origem em ${lead.cidadeOrigem || 'sua cidade'}. Podemos te ajudar com um plano de viagem personalizado!`);
                         htmlAcoes = `<button class="btn-whatsapp" onclick="window.open('https://wa.me/${lead.whatsapp}?text=${msg}', '_blank')">💬 CHAMAR NO WHATSAPP</button>`;
                     } else {
                         htmlAcoes = `<button class="btn-inativo" disabled>⚠️ EM ATENDIMENTO POR OUTRA AGÊNCIA</button>`;
                     }
                 }
 
+                // WhatsApp sempre com classe whatsapp-blur (borrado)
                 card.innerHTML = `
                     <h3>✈️ Destino: ${lead.destino}</h3>
                     <div class="lead-info">👤 <strong>Nome:</strong> ${lead.nome} <span class="blur-data">${lead.sobrenome || ''}</span></div>
-                    <div class="lead-info">📱 <strong>WhatsApp:</strong> <span class="blur-data">${lead.whatsapp}</span></div>
+                    <div class="lead-info">📍 <strong>Cidade de Origem:</strong> ${lead.cidadeOrigem || 'Não informada'}</div>
+                    <div class="lead-info">📱 <strong>WhatsApp:</strong> <span class="whatsapp-blur">${lead.whatsapp}</span></div>
                     <div class="lead-info">👥 <strong>Passageiros:</strong> ${lead.passageiros}</div>
                     <div class="lead-info">📅 <strong>Data:</strong> ${lead.data}</div>
                     <div class="lead-info">💰 <strong>Orçamento:</strong> ${lead.orcamento}</div>
@@ -791,13 +809,13 @@
             });
         }
 
-        // RENDERIZADOR MASTER ADMIN 2: Gerenciamento Total de Leads
+        // RENDERIZADOR MASTER ADMIN 2: Gerenciamento Total de Leads (COM CIDADE DE ORIGEM)
         function renderizarPainelAdminLeads() {
             const listaLeadsAdmin = document.getElementById('listaLeadsAdmin');
             listaLeadsAdmin.innerHTML = "";
 
             if (!dadosLocais.leads || Object.keys(dadosLocais.leads).length === 0) {
-                listaLeadsAdmin.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#94a3b8;">Nenhum lead cadastrado no momento.</td></tr>`;
+                listaLeadsAdmin.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#94a3b8;">Nenhum lead cadastrado no momento.</td></tr>`;
                 return;
             }
 
@@ -816,6 +834,7 @@
                 tr.innerHTML = `
                     <td><strong>${lead.destino}</strong></td>
                     <td>👤 ${lead.nome} ${lead.sobrenome || ''}</td>
+                    <td>📍 ${lead.cidadeOrigem || 'Não informada'}</td>
                     <td>📱 <code>${lead.whatsapp}</code></td>
                     <td><small>👥 ${lead.passageiros}<br>📅 ${lead.data}<br>💰 ${lead.orcamento}</small></td>
                     <td>${statusLead}</td>
