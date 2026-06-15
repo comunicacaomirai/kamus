@@ -179,6 +179,54 @@
             color: #38bdf8;
         }
 
+        .btn-comprar-creditos {
+            background: linear-gradient(135deg, #eab308 0%, #ca8a04 100%);
+            width: auto;
+            padding: 0.5rem 1rem;
+            margin: 0;
+            font-size: 0.9rem;
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: #1e293b;
+            border-radius: 16px;
+            padding: 2rem;
+            max-width: 400px;
+            width: 90%;
+            border: 1px solid #38bdf8;
+        }
+        .kit-item {
+            background: #0f172a;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .btn-kit {
+            width: auto;
+            padding: 0.5rem 1rem;
+            margin: 0;
+            background: linear-gradient(135deg, #22c55e 0%, #15803d 100%);
+        }
+        .fechar-modal {
+            background: #ef4444;
+            margin-top: 0;
+        }
+
         .ordenacao-bar {
             background: #1e293b;
             border-radius: 12px;
@@ -253,6 +301,18 @@
             background: linear-gradient(135deg, #78350f 0%, #451a03 100%);
             border: 2px solid #d97706;
         }
+        
+        .card-lead.finalizado {
+            background: linear-gradient(135deg, #7f1d1d 0%, #450a0a 100%);
+            border: 2px solid #ef4444;
+            opacity: 0.6;
+            display: none;
+        }
+        
+        .card-lead.negociacao {
+            background: linear-gradient(135deg, #1e3a8a 0%, #172554 100%);
+            border: 2px solid #3b82f6;
+        }
 
         .card-lead h3 {
             font-size: 1.3rem;
@@ -262,6 +322,7 @@
         }
 
         .card-lead.atendido h3 { color: #fbbf24; border-bottom: 1px solid rgba(251, 191, 36, 0.2); }
+        .card-lead.negociacao h3 { color: #60a5fa; }
         .lead-info { font-size: 0.95rem; color: #e2e8f0; }
         .lead-info strong { color: #a7f3d0; }
 
@@ -286,6 +347,9 @@
         .btn-pescar { background: linear-gradient(135deg, #10b981 0%, #059669 100%); margin-top: 0.5rem;}
         .btn-whatsapp { background: linear-gradient(135deg, #22c55e 0%, #15803d 100%); margin-top: 0.5rem; }
         .btn-inativo { background: #2d1a0f !important; border: 1px solid #78350f; color: #d97706; cursor: not-allowed; margin-top: 0.5rem; opacity: 0.6; }
+        .btn-status { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); margin-top: 0.3rem; font-size: 0.8rem; padding: 0.4rem; }
+        .btn-status.negociacao { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); }
+        .btn-status.finalizado { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
         
         .table-container {
             background: rgba(30, 41, 59, 0.8);
@@ -330,6 +394,7 @@
         .btn-credit { background: #eab308; color: #0f172a; }
         .btn-release { background: #3b82f6; color: white; }
         .btn-delete { background: #dc2626; color: white; }
+        .btn-notify { background: #f59e0b; color: white; }
 
         .admin-form-inline {
             background: #1e293b;
@@ -341,6 +406,23 @@
 
         .hidden { display: none !important; }
         .loading { opacity: 0.6; pointer-events: none; }
+        
+        .notificacao {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #0ea5e9;
+            color: white;
+            padding: 1rem;
+            border-radius: 8px;
+            z-index: 2000;
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
     </style>
 </head>
 <body>
@@ -426,6 +508,7 @@
                     <label>🏢 Agência: <strong id="lblAgenciaLogada" style="color:#38bdf8;">-</strong></label>
                 </div>
                 <div class="badge-creditos">🪙 Seus Créditos: <span id="txtCreditos">0</span></div>
+                <button class="btn-comprar-creditos">💰 Comprar Créditos</button>
                 <button class="btnSair" style="width: auto; padding: 0.5rem 1rem; background: #334155; margin: 0;">Sair</button>
             </div>
         </div>
@@ -496,6 +579,10 @@
         </div>
     </div>
 
+    <audio id="somMoeda" preload="auto">
+        <source src="https://www.soundjay.com/misc/sounds/coin-drop-2.mp3" type="audio/mpeg">
+    </audio>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, set, onValue, update, remove, get, child } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
@@ -516,16 +603,30 @@
         const db = getDatabase(app);
         const auth = getAuth(app);
 
-        // Lista de emails autorizados como administradores
         const ADMIN_EMAILS = [
             "admin@guia42.com",
-            "seu-email-aqui@gmail.com"  // ← Adicione quantos emails admin quiser
+            "seu-email-aqui@gmail.com"
         ];
 
         let LoggedAgenciaId = "";
         let dadosLocais = {};
         let ordenacaoAtual = "chegada";
         let adminLogado = false;
+        
+        const somMoeda = document.getElementById('somMoeda');
+        
+        function tocarSomMoeda() {
+            somMoeda.currentTime = 0;
+            somMoeda.play().catch(e => console.log('Áudio não pôde ser reproduzido'));
+        }
+        
+        function mostrarNotificacao(mensagem) {
+            const notif = document.createElement('div');
+            notif.className = 'notificacao';
+            notif.innerHTML = mensagem;
+            document.body.appendChild(notif);
+            setTimeout(() => notif.remove(), 5000);
+        }
 
         const authContainer = document.getElementById('authContainer');
         const painelAquario = document.getElementById('painelAquario');
@@ -583,7 +684,7 @@
             const email = document.getElementById('cadEmail').value.trim();
             const usuario = document.getElementById('cadUser').value.trim().toLowerCase().replace(/\s+/g, '');
             const senha = document.getElementById('cadPassword').value;
-            const dadosAgencia = { id: usuario, nome, cnpj, whatsapp, email, usuario, senha, creditos: 0, status: "bloqueado" };
+            const dadosAgencia = { id: usuario, nome, cnpj, whatsapp, email, usuario, senha, creditos: 0, status: "bloqueado", notificacoes: [] };
             try {
                 const snapshot = await get(child(ref(db), `guia_viajante_42/agencias/${usuario}`));
                 if (snapshot.exists()) { alert('Usuário já existente!'); return; }
@@ -608,6 +709,7 @@
                 data: document.getElementById('admLeadData').value.trim(),
                 orcamento: document.getElementById('admLeadOrcamento').value.trim(),
                 comprador: "",
+                statusLead: "disponivel",
                 timestamp: Date.now()
             };
             try {
@@ -632,12 +734,18 @@
                         painelAquario.classList.remove('hidden');
                         adminLogado = false;
                         conectarAoFirebaseRealtime(false);
+                        
+                        if (agencia.notificacoes && agencia.notificacoes.length > 0) {
+                            agencia.notificacoes.forEach(notif => {
+                                mostrarNotificacao(notif);
+                            });
+                            await update(ref(db), { [`guia_viajante_42/agencias/${user}/notificacoes`]: [] });
+                        }
                     } else { alert('Senha incorreta!'); }
                 } else { alert('Usuário não encontrado!'); }
             } catch (err) { alert('Erro de rede.'); }
         });
 
-        // NOVO LOGIN ADMIN COM FIREBASE AUTH
         adminLoginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = document.getElementById('adminUser').value.trim();
@@ -649,11 +757,9 @@
             submitBtn.disabled = true;
 
             try {
-                // Autenticar no Firebase
                 const userCredential = await signInWithEmailAndPassword(auth, email, password);
                 const userEmail = userCredential.user.email;
                 
-                // Verificar se o email está na lista de administradores
                 if (ADMIN_EMAILS.includes(userEmail)) {
                     adminLogado = true;
                     authContainer.classList.add('hidden');
@@ -661,7 +767,6 @@
                     conectarAoFirebaseRealtime(true);
                     adminLoginForm.reset();
                 } else {
-                    // Se não for admin, desloga imediatamente
                     await signOut(auth);
                     alert('❌ Acesso negado. Você não tem permissão de administrador.');
                 }
@@ -688,7 +793,6 @@
             }
         });
 
-        // LOGOUT melhorado
         document.querySelectorAll('.btnSair').forEach(btn => {
             btn.addEventListener('click', async () => {
                 painelAquario.classList.add('hidden');
@@ -697,13 +801,52 @@
                 loginForm.reset(); 
                 adminLoginForm.reset();
                 
-                // Se estava logado como admin, desloga do Firebase Auth
                 if (adminLogado) {
                     await signOut(auth);
                     adminLogado = false;
                 }
                 LoggedAgenciaId = "";
             });
+        });
+        
+        document.querySelector('.btn-comprar-creditos')?.addEventListener('click', () => {
+            const modal = document.createElement('div');
+            modal.className = 'modal';
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <h2 style="text-align:center; margin-bottom:1rem;">💰 Comprar Créditos</h2>
+                    <div class="kit-item">
+                        <div><strong>Kit Start</strong><br>5 leads</div>
+                        <div><strong>R$ 45,00</strong></div>
+                        <button class="btn-kit" data-kit="Start" data-preco="45" data-qtd="5">Comprar</button>
+                    </div>
+                    <div class="kit-item">
+                        <div><strong>Kit Pro</strong><br>15 leads</div>
+                        <div><strong>R$ 120,00</strong></div>
+                        <button class="btn-kit" data-kit="Pro" data-preco="120" data-qtd="15">Comprar</button>
+                    </div>
+                    <div class="kit-item">
+                        <div><strong>Kit Power</strong><br>30 leads</div>
+                        <div><strong>R$ 210,00</strong></div>
+                        <button class="btn-kit" data-kit="Power" data-preco="210" data-qtd="30">Comprar</button>
+                    </div>
+                    <button class="fechar-modal">Fechar</button>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            
+            modal.querySelectorAll('.btn-kit').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const kit = btn.getAttribute('data-kit');
+                    const preco = btn.getAttribute('data-preco');
+                    const qtd = btn.getAttribute('data-qtd');
+                    const nomeAgencia = dadosLocais.agencias?.[LoggedAgenciaId]?.nome || LoggedAgenciaId;
+                    const msg = `🛒 SOLICITAÇÃO DE COMPRA DE CRÉDITOS\n\nAgência: ${nomeAgencia}\nKit: ${kit} (${qtd} leads)\nValor: R$ ${preco},00\n\nUsuário: ${LoggedAgenciaId}`;
+                    window.open(`https://wa.me/5547996097836?text=${encodeURIComponent(msg)}`, '_blank');
+                    modal.remove();
+                });
+            });
+            modal.querySelector('.fechar-modal').addEventListener('click', () => modal.remove());
         });
 
         function conectarAoFirebaseRealtime(isAdmin) {
@@ -761,7 +904,7 @@
                 timestamp: dadosLocais.leads[key].timestamp || 0,
                 valorOrcamento: extrairValorOrcamento(dadosLocais.leads[key].orcamento),
                 dataViagemTimestamp: extrairDataViagem(dadosLocais.leads[key].data)
-            }));
+            })).filter(lead => lead.statusLead !== 'finalizado');
 
             switch(ordenacaoAtual) {
                 case "chegada": leadsArray.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)); break;
@@ -779,17 +922,26 @@
                 card.className = 'card-lead';
                 let htmlAcoes = '';
 
+                // Lead disponível para pescar
                 if (!lead.comprador || lead.comprador === "") {
                     htmlAcoes = `<button class="btn-pescar" data-id="${lead.id}">🎣 PESCAR LEAD (1 CRÉDITO)</button>`;
-                } else {
+                } 
+                // Lead já foi pescado pela agência logada
+                else if (lead.comprador === LoggedAgenciaId) {
                     card.classList.add('atendido');
-                    if (lead.comprador === LoggedAgenciaId) {
-                        card.classList.add('revelado');
-                        const msg = encodeURIComponent(`Olá ${lead.nome}, sou da agência ${infoAgencia?.nome || 'Guia do Viajante'}. Recebemos sua solicitação de viagem para ${lead.destino} com origem em ${lead.cidadeOrigem || 'sua cidade'}. Podemos te ajudar com um plano de viagem personalizado!`);
-                        htmlAcoes = `<button class="btn-whatsapp" onclick="window.open('https://wa.me/${lead.whatsapp}?text=${msg}', '_blank')">💬 CHAMAR NO WHATSAPP</button>`;
-                    } else {
-                        htmlAcoes = `<button class="btn-inativo" disabled>⚠️ EM ATENDIMENTO POR OUTRA AGÊNCIA</button>`;
-                    }
+                    if (lead.statusLead === 'negociacao') card.classList.add('negociacao');
+                    const msg = encodeURIComponent(`Olá ${lead.nome}, sou da agência ${infoAgencia?.nome || 'Guia do Viajante'}. Recebemos sua solicitação de viagem para ${lead.destino} com origem em ${lead.cidadeOrigem || 'sua cidade'}. Podemos te ajudar com um plano de viagem personalizado!`);
+                    htmlAcoes = `
+                        <button class="btn-whatsapp" onclick="window.open('https://wa.me/${lead.whatsapp}?text=${msg}', '_blank')">💬 CHAMAR NO WHATSAPP</button>
+                        <div style="display:flex; gap:0.5rem; margin-top:0.5rem;">
+                            <button class="btn-status negociacao" data-id="${lead.id}" data-status="negociacao">🔄 EM NEGOCIAÇÃO</button>
+                            <button class="btn-status finalizado" data-id="${lead.id}" data-status="finalizado">✅ FINALIZADO</button>
+                        </div>
+                    `;
+                } 
+                // Lead pescado por outra agência
+                else {
+                    htmlAcoes = `<button class="btn-inativo" disabled>⚠️ EM ATENDIMENTO POR OUTRA AGÊNCIA</button>`;
                 }
 
                 card.innerHTML = `
@@ -801,21 +953,47 @@
                     <div class="lead-info">📅 <strong>Data:</strong> ${lead.data}</div>
                     <div class="lead-info">💰 <strong>Orçamento:</strong> ${lead.orcamento}</div>
                     <div class="lead-actions">${htmlAcoes}</div>
-                    <div class="badge-chegada">🕐 Chegou em: ${new Date(lead.timestamp).toLocaleDateString('pt-BR')}</div>
                 `;
                 aquarioLeads.appendChild(card);
             });
 
+            // Evento para botão PESCAR
             document.querySelectorAll('.btn-pescar').forEach(btn => {
-                btn.addEventListener('click', (e) => {
+                btn.addEventListener('click', async (e) => {
                     const idLead = e.target.getAttribute('data-id');
                     const dadosAgenciaAtiva = dadosLocais.agencias[LoggedAgenciaId];
-                    if (!dadosAgenciaAtiva || dadosAgenciaAtiva.creditos <= 0) { alert('Créditos insuficientes!'); return; }
+                    if (!dadosAgenciaAtiva || dadosAgenciaAtiva.creditos <= 0) { 
+                        alert('Créditos insuficientes!'); 
+                        return; 
+                    }
+                    
+                    tocarSomMoeda();
                     
                     const updates = {};
                     updates[`guia_viajante_42/leads/${idLead}/comprador`] = LoggedAgenciaId;
+                    updates[`guia_viajante_42/leads/${idLead}/statusLead`] = "negociacao";
                     updates[`guia_viajante_42/agencias/${LoggedAgenciaId}/creditos`] = dadosAgenciaAtiva.creditos - 1;
-                    update(ref(db), updates);
+                    await update(ref(db), updates);
+                    
+                    alert('✅ Lead pescado com sucesso! Agora você pode gerenciar o status do lead.');
+                });
+            });
+            
+            // Evento para botões de status (EM NEGOCIAÇÃO / FINALIZADO)
+            document.querySelectorAll('.btn-status').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    const idLead = e.target.getAttribute('data-id');
+                    const novoStatus = e.target.getAttribute('data-status');
+                    
+                    if (novoStatus === 'finalizado') {
+                        if (confirm('⚠️ Ao finalizar este lead, ele ficará oculto para outras agências. Deseja continuar?')) {
+                            await update(ref(db), { [`guia_viajante_42/leads/${idLead}/statusLead`]: "finalizado" });
+                            alert('✅ Lead finalizado com sucesso!');
+                        }
+                    } else if (novoStatus === 'negociacao') {
+                        await update(ref(db), { [`guia_viajante_42/leads/${idLead}/statusLead`]: "negociacao" });
+                        alert('🔄 Lead marcado como EM NEGOCIAÇÃO!');
+                    }
                 });
             });
         }
@@ -833,7 +1011,7 @@
                 const tr = document.createElement('tr');
                 const statusBadge = ag.status === 'bloqueado' ? `<span style="color:#ef4444;">🔴 Bloqueado</span>` : `<span style="color:#22c55e;">🟢 Ativo</span>`;
                 const btnStatus = ag.status === 'bloqueado' ? `<button class="btn-action btn-unblock" data-id="${ag.id}" data-action="ativar">🔓 Liberar</button>` : `<button class="btn-action btn-block" data-id="${ag.id}" data-action="bloquear">🔒 Bloquear</button>`;
-                tr.innerHTML = `<td><strong>${ag.nome}</strong><br><small>CNPJ: ${ag.cnpj}</small></td><td><code>${ag.usuario}</code><br><small>Senha: ${ag.senha}</small></td><td>📱 ${ag.whatsapp}<br>✉️ ${ag.email}</td><td style="color:#eab308">🪙 ${ag.creditos}</td><td>${statusBadge}</td><td>${btnStatus}<button class="btn-action btn-credit" data-id="${ag.id}" data-action="credito">➕ Crédito</button><button class="btn-action btn-delete" data-id="${ag.id}" data-action="excluir_agencia">🗑️ Excluir</button></td>`;
+                tr.innerHTML = `<td><strong>${ag.nome}</strong><br><small>CNPJ: ${ag.cnpj}</small></td><td><code>${ag.usuario}</code><br><small>Senha: ${ag.senha}</small></td><td>📱 ${ag.whatsapp}<br>✉️ ${ag.email}</td><td style="color:#eab308">🪙 ${ag.creditos}</td><td>${statusBadge}</td><td>${btnStatus}<button class="btn-action btn-credit" data-id="${ag.id}" data-action="credito">➕ Crédito</button><button class="btn-action btn-delete" data-id="${ag.id}" data-action="excluir_agencia">🗑️ Excluir</button><button class="btn-action btn-notify" data-id="${ag.id}" data-action="notificar">📢 Notificar</button></td>`;
                 listaAdmin.appendChild(tr);
             });
             mapearCliquesAdminAgencias();
@@ -844,7 +1022,7 @@
                 btn.replaceWith(btn.cloneNode(true));
             });
             document.querySelectorAll('#listaAgenciasAdmin .btn-action').forEach(btn => {
-                btn.addEventListener('click', (e) => {
+                btn.addEventListener('click', async (e) => {
                     const idAgencia = e.target.getAttribute('data-id');
                     const acao = e.target.getAttribute('data-action');
                     if (acao === "ativar") update(ref(db), { [`guia_viajante_42/agencias/${idAgencia}/status`]: "ativo" });
@@ -859,6 +1037,12 @@
                         if (confirm(`⚠️ Tem certeza que deseja deletar permanentemente esta agência?`)) {
                             remove(ref(db), `guia_viajante_42/agencias/${idAgencia}`);
                         }
+                    } else if (acao === "notificar") {
+                        const notificacao = `⚠️ NOTIFICAÇÃO ADMINISTRATIVA: O lead que você está atendendo ficará disponível novamente em até 24h caso não haja resposta. Agilize o atendimento!`;
+                        const notificacoesAtuais = dadosLocais.agencias[idAgencia]?.notificacoes || [];
+                        notificacoesAtuais.push(notificacao);
+                        await update(ref(db), { [`guia_viajante_42/agencias/${idAgencia}/notificacoes`]: notificacoesAtuais });
+                        alert('✅ Notificação enviada para a agência!');
                     }
                 });
             });
@@ -868,7 +1052,7 @@
             const listaLeadsAdmin = document.getElementById('listaLeadsAdmin');
             listaLeadsAdmin.innerHTML = "";
             if (!dadosLocais.leads || Object.keys(dadosLocais.leads).length === 0) {
-                listaLeadsAdmin.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#94a3b8;">Nenhum lead cadastrado.</td></tr>`;
+                listaLeadsAdmin.innerHTML = `<td><td colspan="7" style="text-align:center; color:#94a3b8;">Nenhum lead cadastrado.</td></tr>`;
                 return;
             }
             Object.keys(dadosLocais.leads).forEach(key => {
@@ -877,8 +1061,12 @@
                 let statusLead = `<span style="color:#22c55e;">🟢 Disponível</span>`;
                 let btnLiberar = '';
                 if (lead.comprador && lead.comprador !== "") {
-                    statusLead = `<span style="color:#eab308;">⚠️ Pescado por: ${lead.comprador}</span>`;
-                    btnLiberar = `<button class="btn-action btn-release" data-id="${lead.id}" data-action="liberar">🔄 Liberar</button>`;
+                    let statusTexto = lead.statusLead === 'negociacao' ? 'Em Negociação' : (lead.statusLead === 'finalizado' ? 'Finalizado' : 'Pescado');
+                    let statusCor = lead.statusLead === 'negociacao' ? '#eab308' : (lead.statusLead === 'finalizado' ? '#ef4444' : '#eab308');
+                    statusLead = `<span style="color:${statusCor};">⚠️ ${statusTexto} por: ${lead.comprador}</span>`;
+                    if (lead.statusLead !== 'finalizado') {
+                        btnLiberar = `<button class="btn-action btn-release" data-id="${lead.id}" data-action="liberar">🔄 Liberar</button>`;
+                    }
                 }
                 tr.innerHTML = `<td><strong>${lead.destino}</strong></td><td>👤 ${lead.nome} ${lead.sobrenome || ''}</td><td>📍 ${lead.cidadeOrigem || '-'}</td><td>📱 ${lead.whatsapp}</td><td><small>👥 ${lead.passageiros}<br>📅 ${lead.data}<br>💰 ${lead.orcamento}</small></td><td>${statusLead}</td><td>${btnLiberar}<button class="btn-action btn-delete" data-id="${lead.id}" data-action="excluir">🗑️ Excluir</button></td>`;
                 listaLeadsAdmin.appendChild(tr);
@@ -894,7 +1082,7 @@
                 btn.addEventListener('click', (e) => {
                     const idLead = e.target.getAttribute('data-id');
                     const acao = e.target.getAttribute('data-action');
-                    if (acao === "liberar") update(ref(db), { [`guia_viajante_42/leads/${idLead}/comprador`]: "" });
+                    if (acao === "liberar") update(ref(db), { [`guia_viajante_42/leads/${idLead}/comprador`]: "", [`guia_viajante_42/leads/${idLead}/statusLead`]: "disponivel" });
                     else if (acao === "excluir") remove(ref(db), `guia_viajante_42/leads/${idLead}`);
                 });
             });
