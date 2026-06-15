@@ -415,6 +415,13 @@
             from { transform: translateX(100%); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
         }
+        
+        .lead-id {
+            font-size: 0.7rem;
+            color: #64748b;
+            margin-top: 0.5rem;
+            word-break: break-all;
+        }
     </style>
 </head>
 <body>
@@ -577,7 +584,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, set, onValue, update, remove, get, child } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getDatabase, ref, set, onValue, update, remove, get, child, push } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
         import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         const firebaseConfig = {
@@ -687,11 +694,11 @@
             } catch (err) { alert('Erro no cadastro.'); }
         });
 
+        // CORREÇÃO: Usar push() para gerar ID único automaticamente
         document.getElementById('adminCadastrarLeadForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const idUnico = "lead_" + Date.now();
+            
             const novoLead = {
-                id: idUnico,
                 destino: document.getElementById('admLeadDestino').value.trim(),
                 nome: document.getElementById('admLeadNome').value.trim(),
                 sobrenome: document.getElementById('admLeadSobrenome').value.trim(),
@@ -704,11 +711,20 @@
                 statusLead: "disponivel",
                 timestamp: Date.now()
             };
+            
             try {
-                await set(ref(db, `guia_viajante_42/leads/${idUnico}`), novoLead);
+                // Usando push() para gerar ID único automaticamente
+                const leadsRef = ref(db, 'guia_viajante_42/leads');
+                const newLeadRef = push(leadsRef);
+                await set(newLeadRef, novoLead);
+                
+                console.log('Lead criado com ID:', newLeadRef.key);
                 alert('Lead inserido com sucesso no aquário!');
                 document.getElementById('adminCadastrarLeadForm').reset();
-            } catch (err) { alert('Erro ao inserir o lead.'); }
+            } catch (err) { 
+                console.error('Erro ao inserir lead:', err);
+                alert('Erro ao inserir o lead: ' + err.message);
+            }
         });
 
         loginForm.addEventListener('submit', async (e) => {
@@ -914,20 +930,17 @@
                 card.className = 'card-lead';
                 let htmlAcoes = '';
 
-                // Lead disponível para pescar
                 if (!lead.comprador || lead.comprador === "") {
-                    htmlAcoes = `<button class="btn-pescar" data-id="${lead.id}">🎣 PESCAR LEAD (1 CRÉDITO)</button>`;
+                    htmlAcoes = `<button class="btn-pescar" data-id="${lead.idOriginal}">🎣 PESCAR LEAD (1 CRÉDITO)</button>`;
                 } 
-                // Lead já foi pescado pela agência logada
                 else if (lead.comprador === LoggedAgenciaId) {
                     card.classList.add('atendido');
                     const msg = encodeURIComponent(`Olá ${lead.nome}, sou da agência ${infoAgencia?.nome || 'Guia do Viajante'}. Recebemos sua solicitação de viagem para ${lead.destino} com origem em ${lead.cidadeOrigem || 'sua cidade'}. Podemos te ajudar com um plano de viagem personalizado!`);
                     htmlAcoes = `
                         <button class="btn-whatsapp" onclick="window.open('https://wa.me/${lead.whatsapp}?text=${msg}', '_blank')">💬 CHAMAR NO WHATSAPP</button>
-                        <button class="btn-finalizar" data-id="${lead.id}">✅ FINALIZAR LEAD</button>
+                        <button class="btn-finalizar" data-id="${lead.idOriginal}">✅ FINALIZAR LEAD</button>
                     `;
                 } 
-                // Lead pescado por outra agência
                 else {
                     htmlAcoes = `<button class="btn-inativo" disabled>⚠️ EM ATENDIMENTO POR OUTRA AGÊNCIA</button>`;
                 }
@@ -945,7 +958,6 @@
                 aquarioLeads.appendChild(card);
             });
 
-            // Evento para botão PESCAR
             document.querySelectorAll('.btn-pescar').forEach(btn => {
                 btn.addEventListener('click', async (e) => {
                     const idLead = e.target.getAttribute('data-id');
@@ -967,7 +979,6 @@
                 });
             });
             
-            // Evento para botão FINALIZAR
             document.querySelectorAll('.btn-finalizar').forEach(btn => {
                 btn.addEventListener('click', async (e) => {
                     const idLead = e.target.getAttribute('data-id');
@@ -992,41 +1003,16 @@
                 const ag = dadosLocais.agencias[key];
                 const tr = document.createElement('tr');
                 const statusBadge = ag.status === 'bloqueado' ? `<span style="color:#ef4444;">🔴 Bloqueado</span>` : `<span style="color:#22c55e;">🟢 Ativo</span>`;
-                const btnStatus = ag.status === 'bloqueado' ? `<button class="btn-action btn-unblock" data-id="${ag.id}" data-action="ativar">🔓 Liberar</button>` : `<button class="btn-action btn-block" data-id="${ag.id}" data-action="bloquear">🔒 Bloquear</button>`;
-                tr.innerHTML = `<td><strong>${ag.nome}</strong><br><small>CNPJ: ${ag.cnpj}</small></td><td><code>${ag.usuario}</code><br><small>Senha: ${ag.senha}</small></td><td>📱 ${ag.whatsapp}<br>✉️ ${ag.email}</td><td style="color:#eab308">🪙 ${ag.creditos}</td><td>${statusBadge}</td><td>${btnStatus}<button class="btn-action btn-credit" data-id="${ag.id}" data-action="credito">➕ Crédito</button><button class="btn-action btn-delete" data-id="${ag.id}" data-action="excluir_agencia">🗑️ Excluir</button><button class="btn-action btn-notify" data-id="${ag.id}" data-action="notificar">📢 Notificar</button></td>`;
+                const btnStatus = ag.status === 'bloqueado' ? `<button class="btn-action btn-unblock" data-id="${key}" data-action="ativar">🔓 Liberar</button>` : `<button class="btn-action btn-block" data-id="${key}" data-action="bloquear">🔒 Bloquear</button>`;
+                tr.innerHTML = `
+                    <td><strong>${ag.nome}</strong><br><small>CNPJ: ${ag.cnpj}</small></td>
+                    <td><code>${ag.usuario}</code><br><small>Senha: ${ag.senha}</small></td>
+                    <td>📱 ${ag.whatsapp}<br>✉️ ${ag.email}</td>
+                    <td style="color:#eab308">🪙 ${ag.creditos}</td>
+                    <td>${statusBadge}</td>
+                    <td>${btnStatus}<button class="btn-action btn-credit" data-id="${key}" data-action="credito">➕ Crédito</button><button class="btn-action btn-delete" data-id="${key}" data-action="excluir_agencia">🗑️ Excluir</button><button class="btn-action btn-notify" data-id="${key}" data-action="notificar">📢 Notificar</button></td>
+                `;
                 listaAdmin.appendChild(tr);
-            });
-            mapearCliquesAdminAgencias();
-        }
-
-        function mapearCliquesAdminAgencias() {
-            document.querySelectorAll('#listaAgenciasAdmin .btn-action').forEach(btn => {
-                btn.replaceWith(btn.cloneNode(true));
-            });
-            document.querySelectorAll('#listaAgenciasAdmin .btn-action').forEach(btn => {
-                btn.addEventListener('click', async (e) => {
-                    const idAgencia = e.target.getAttribute('data-id');
-                    const acao = e.target.getAttribute('data-action');
-                    if (acao === "ativar") update(ref(db), { [`guia_viajante_42/agencias/${idAgencia}/status`]: "ativo" });
-                    else if (acao === "bloquear") update(ref(db), { [`guia_viajante_42/agencias/${idAgencia}/status`]: "bloqueado" });
-                    else if (acao === "credito") {
-                        const qtd = prompt("Quantos créditos deseja ADICIONAR?", "10");
-                        if (qtd && !isNaN(qtd)) {
-                            const atuais = dadosLocais.agencias[idAgencia].creditos || 0;
-                            update(ref(db), { [`guia_viajante_42/agencias/${idAgencia}/creditos`]: atuais + parseInt(qtd) });
-                        }
-                    } else if (acao === "excluir_agencia") {
-                        if (confirm(`⚠️ Tem certeza que deseja deletar permanentemente esta agência?`)) {
-                            remove(ref(db), `guia_viajante_42/agencias/${idAgencia}`);
-                        }
-                    } else if (acao === "notificar") {
-                        const notificacao = `⚠️ NOTIFICAÇÃO ADMINISTRATIVA: O lead que você está atendendo ficará disponível novamente em até 24h caso não haja resposta. Agilize o atendimento!`;
-                        const notificacoesAtuais = dadosLocais.agencias[idAgencia]?.notificacoes || [];
-                        notificacoesAtuais.push(notificacao);
-                        await update(ref(db), { [`guia_viajante_42/agencias/${idAgencia}/notificacoes`]: notificacoesAtuais });
-                        alert('✅ Notificação enviada para a agência!');
-                    }
-                });
             });
         }
 
@@ -1034,9 +1020,10 @@
             const listaLeadsAdmin = document.getElementById('listaLeadsAdmin');
             listaLeadsAdmin.innerHTML = "";
             if (!dadosLocais.leads || Object.keys(dadosLocais.leads).length === 0) {
-                listaLeadsAdmin.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#94a3b8;">Nenhum lead cadastrado. </td></tr>`;
+                listaLeadsAdmin.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#94a3b8;">Nenhum lead cadastrado.</td></tr>`;
                 return;
             }
+            
             Object.keys(dadosLocais.leads).forEach(key => {
                 const lead = dadosLocais.leads[key];
                 const tr = document.createElement('tr');
@@ -1047,28 +1034,107 @@
                     let statusCor = lead.statusLead === 'finalizado' ? '#ef4444' : '#eab308';
                     statusLead = `<span style="color:${statusCor};">⚠️ ${statusTexto} por: ${lead.comprador}</span>`;
                     if (lead.statusLead !== 'finalizado') {
-                        btnLiberar = `<button class="btn-action btn-release" data-id="${lead.id}" data-action="liberar">🔄 Liberar</button>`;
+                        btnLiberar = `<button class="btn-action btn-release" data-id="${key}" data-action="liberar">🔄 Liberar</button>`;
                     }
                 }
-                tr.innerHTML = `<td><strong>${lead.destino}</strong></td><td>👤 ${lead.nome} ${lead.sobrenome || ''}</td><td>📍 ${lead.cidadeOrigem || '-'}</td><td>📱 ${lead.whatsapp}</td><td><small>👥 ${lead.passageiros}<br>📅 ${lead.data}<br>💰 ${lead.orcamento}</small></td><td>${statusLead}</td><td>${btnLiberar}<button class="btn-action btn-delete" data-id="${lead.id}" data-action="excluir">🗑️ Excluir</button></td>`;
+                tr.innerHTML = `
+                    <td><strong>${lead.destino}</strong></td>
+                    <td>👤 ${lead.nome} ${lead.sobrenome || ''}</td>
+                    <td>📍 ${lead.cidadeOrigem || '-'}</td>
+                    <td>📱 ${lead.whatsapp}</td>
+                    <td><small>👥 ${lead.passageiros}<br>📅 ${lead.data}<br>💰 ${lead.orcamento}</small></td>
+                    <td>${statusLead}</td>
+                    <td>${btnLiberar}<button class="btn-action btn-delete" data-id="${key}" data-action="excluir_lead">🗑️ Excluir</button></td>
+                `;
                 listaLeadsAdmin.appendChild(tr);
             });
-            mapearCliquesAdminLeads();
         }
 
-        function mapearCliquesAdminLeads() {
-            document.querySelectorAll('#listaLeadsAdmin .btn-action').forEach(btn => {
-                btn.replaceWith(btn.cloneNode(true));
-            });
-            document.querySelectorAll('#listaLeadsAdmin .btn-action').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const idLead = e.target.getAttribute('data-id');
-                    const acao = e.target.getAttribute('data-action');
-                    if (acao === "liberar") update(ref(db), { [`guia_viajante_42/leads/${idLead}/comprador`]: "", [`guia_viajante_42/leads/${idLead}/statusLead`]: "disponivel" });
-                    else if (acao === "excluir") remove(ref(db), `guia_viajante_42/leads/${idLead}`);
-                });
-            });
-        }
+        // CORREÇÃO PRINCIPAL: Event delegation para exclusão individual
+        document.getElementById('listaAgenciasAdmin')?.addEventListener('click', async (e) => {
+            const btn = e.target.closest('.btn-action');
+            if (!btn) return;
+            
+            const idAgencia = btn.getAttribute('data-id');
+            const acao = btn.getAttribute('data-action');
+            
+            console.log('Ação na agência:', acao, 'ID:', idAgencia);
+            
+            if (acao === "ativar") {
+                await update(ref(db), { [`guia_viajante_42/agencias/${idAgencia}/status`]: "ativo" });
+                alert('Agência ativada com sucesso!');
+            }
+            else if (acao === "bloquear") {
+                await update(ref(db), { [`guia_viajante_42/agencias/${idAgencia}/status`]: "bloqueado" });
+                alert('Agência bloqueada com sucesso!');
+            }
+            else if (acao === "credito") {
+                const qtd = prompt("Quantos créditos deseja ADICIONAR?", "10");
+                if (qtd && !isNaN(qtd)) {
+                    const atuais = dadosLocais.agencias?.[idAgencia]?.creditos || 0;
+                    await update(ref(db), { [`guia_viajante_42/agencias/${idAgencia}/creditos`]: atuais + parseInt(qtd) });
+                    alert(`${qtd} créditos adicionados com sucesso!`);
+                }
+            }
+            else if (acao === "excluir_agencia") {
+                const nomeAgencia = dadosLocais.agencias?.[idAgencia]?.nome || idAgencia;
+                if (confirm(`⚠️ Tem certeza que deseja deletar permanentemente a agência "${nomeAgencia}"?\n\nEsta ação não pode ser desfeita!`)) {
+                    try {
+                        await remove(ref(db), `guia_viajante_42/agencias/${idAgencia}`);
+                        alert(`✅ Agência "${nomeAgencia}" excluída com sucesso!`);
+                    } catch (error) {
+                        console.error('Erro ao excluir agência:', error);
+                        alert('Erro ao excluir agência: ' + error.message);
+                    }
+                }
+            }
+            else if (acao === "notificar") {
+                const notificacao = `⚠️ NOTIFICAÇÃO ADMINISTRATIVA: O lead que você está atendendo ficará disponível novamente em até 24h caso não haja resposta. Agilize o atendimento!`;
+                const notificacoesAtuais = dadosLocais.agencias?.[idAgencia]?.notificacoes || [];
+                notificacoesAtuais.push(notificacao);
+                await update(ref(db), { [`guia_viajante_42/agencias/${idAgencia}/notificacoes`]: notificacoesAtuais });
+                alert('✅ Notificação enviada para a agência!');
+            }
+        });
+
+        // CORREÇÃO PRINCIPAL: Event delegation para exclusão individual de leads
+        document.getElementById('listaLeadsAdmin')?.addEventListener('click', async (e) => {
+            const btn = e.target.closest('.btn-action');
+            if (!btn) return;
+            
+            const idLead = btn.getAttribute('data-id');
+            const acao = btn.getAttribute('data-action');
+            
+            console.log('Ação no lead:', acao, 'ID:', idLead);
+            console.log('Lead a ser excluído:', dadosLocais.leads?.[idLead]);
+            
+            if (acao === "liberar") {
+                if (confirm(`⚠️ Tem certeza que deseja liberar este lead para o aquário novamente?`)) {
+                    await update(ref(db), { 
+                        [`guia_viajante_42/leads/${idLead}/comprador`]: "", 
+                        [`guia_viajante_42/leads/${idLead}/statusLead`]: "disponivel" 
+                    });
+                    alert('✅ Lead liberado com sucesso!');
+                }
+            }
+            else if (acao === "excluir_lead") {
+                const nomeLead = dadosLocais.leads?.[idLead]?.nome || 'este lead';
+                const destinoLead = dadosLocais.leads?.[idLead]?.destino || '';
+                
+                if (confirm(`⚠️ Tem certeza que deseja deletar permanentemente o lead "${nomeLead} - ${destinoLead}"?\n\nEsta ação não pode ser desfeita!`)) {
+                    try {
+                        // Caminho específico para excluir APENAS este lead
+                        const leadRef = ref(db, `guia_viajante_42/leads/${idLead}`);
+                        await remove(leadRef);
+                        console.log(`Lead ${idLead} removido com sucesso`);
+                        alert(`✅ Lead "${nomeLead}" excluído com sucesso!`);
+                    } catch (error) {
+                        console.error('Erro detalhado ao excluir lead:', error);
+                        alert('Erro ao excluir lead: ' + error.message);
+                    }
+                }
+            }
+        });
     </script>
 </body>
 </html>
