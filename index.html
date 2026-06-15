@@ -308,11 +308,6 @@
             opacity: 0.6;
             display: none;
         }
-        
-        .card-lead.negociacao {
-            background: linear-gradient(135deg, #1e3a8a 0%, #172554 100%);
-            border: 2px solid #3b82f6;
-        }
 
         .card-lead h3 {
             font-size: 1.3rem;
@@ -322,7 +317,6 @@
         }
 
         .card-lead.atendido h3 { color: #fbbf24; border-bottom: 1px solid rgba(251, 191, 36, 0.2); }
-        .card-lead.negociacao h3 { color: #60a5fa; }
         .lead-info { font-size: 0.95rem; color: #e2e8f0; }
         .lead-info strong { color: #a7f3d0; }
 
@@ -347,9 +341,7 @@
         .btn-pescar { background: linear-gradient(135deg, #10b981 0%, #059669 100%); margin-top: 0.5rem;}
         .btn-whatsapp { background: linear-gradient(135deg, #22c55e 0%, #15803d 100%); margin-top: 0.5rem; }
         .btn-inativo { background: #2d1a0f !important; border: 1px solid #78350f; color: #d97706; cursor: not-allowed; margin-top: 0.5rem; opacity: 0.6; }
-        .btn-status { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); margin-top: 0.3rem; font-size: 0.8rem; padding: 0.4rem; }
-        .btn-status.negociacao { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); }
-        .btn-status.finalizado { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
+        .btn-finalizar { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); margin-top: 0.5rem; }
         
         .table-container {
             background: rgba(30, 41, 59, 0.8);
@@ -929,14 +921,10 @@
                 // Lead já foi pescado pela agência logada
                 else if (lead.comprador === LoggedAgenciaId) {
                     card.classList.add('atendido');
-                    if (lead.statusLead === 'negociacao') card.classList.add('negociacao');
                     const msg = encodeURIComponent(`Olá ${lead.nome}, sou da agência ${infoAgencia?.nome || 'Guia do Viajante'}. Recebemos sua solicitação de viagem para ${lead.destino} com origem em ${lead.cidadeOrigem || 'sua cidade'}. Podemos te ajudar com um plano de viagem personalizado!`);
                     htmlAcoes = `
                         <button class="btn-whatsapp" onclick="window.open('https://wa.me/${lead.whatsapp}?text=${msg}', '_blank')">💬 CHAMAR NO WHATSAPP</button>
-                        <div style="display:flex; gap:0.5rem; margin-top:0.5rem;">
-                            <button class="btn-status negociacao" data-id="${lead.id}" data-status="negociacao">🔄 EM NEGOCIAÇÃO</button>
-                            <button class="btn-status finalizado" data-id="${lead.id}" data-status="finalizado">✅ FINALIZADO</button>
-                        </div>
+                        <button class="btn-finalizar" data-id="${lead.id}">✅ FINALIZAR LEAD</button>
                     `;
                 } 
                 // Lead pescado por outra agência
@@ -975,24 +963,18 @@
                     updates[`guia_viajante_42/agencias/${LoggedAgenciaId}/creditos`] = dadosAgenciaAtiva.creditos - 1;
                     await update(ref(db), updates);
                     
-                    alert('✅ Lead pescado com sucesso! Agora você pode gerenciar o status do lead.');
+                    alert('✅ Lead pescado com sucesso! Agora você pode finalizar o lead quando concluir o atendimento.');
                 });
             });
             
-            // Evento para botões de status (EM NEGOCIAÇÃO / FINALIZADO)
-            document.querySelectorAll('.btn-status').forEach(btn => {
+            // Evento para botão FINALIZAR
+            document.querySelectorAll('.btn-finalizar').forEach(btn => {
                 btn.addEventListener('click', async (e) => {
                     const idLead = e.target.getAttribute('data-id');
-                    const novoStatus = e.target.getAttribute('data-status');
                     
-                    if (novoStatus === 'finalizado') {
-                        if (confirm('⚠️ Ao finalizar este lead, ele ficará oculto para outras agências. Deseja continuar?')) {
-                            await update(ref(db), { [`guia_viajante_42/leads/${idLead}/statusLead`]: "finalizado" });
-                            alert('✅ Lead finalizado com sucesso!');
-                        }
-                    } else if (novoStatus === 'negociacao') {
-                        await update(ref(db), { [`guia_viajante_42/leads/${idLead}/statusLead`]: "negociacao" });
-                        alert('🔄 Lead marcado como EM NEGOCIAÇÃO!');
+                    if (confirm('⚠️ Ao finalizar este lead, ele ficará oculto para outras agências. Deseja continuar?')) {
+                        await update(ref(db), { [`guia_viajante_42/leads/${idLead}/statusLead`]: "finalizado" });
+                        alert('✅ Lead finalizado com sucesso!');
                     }
                 });
             });
@@ -1052,7 +1034,7 @@
             const listaLeadsAdmin = document.getElementById('listaLeadsAdmin');
             listaLeadsAdmin.innerHTML = "";
             if (!dadosLocais.leads || Object.keys(dadosLocais.leads).length === 0) {
-                listaLeadsAdmin.innerHTML = `<td><td colspan="7" style="text-align:center; color:#94a3b8;">Nenhum lead cadastrado.</td></tr>`;
+                listaLeadsAdmin.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#94a3b8;">Nenhum lead cadastrado. </td></tr>`;
                 return;
             }
             Object.keys(dadosLocais.leads).forEach(key => {
@@ -1061,8 +1043,8 @@
                 let statusLead = `<span style="color:#22c55e;">🟢 Disponível</span>`;
                 let btnLiberar = '';
                 if (lead.comprador && lead.comprador !== "") {
-                    let statusTexto = lead.statusLead === 'negociacao' ? 'Em Negociação' : (lead.statusLead === 'finalizado' ? 'Finalizado' : 'Pescado');
-                    let statusCor = lead.statusLead === 'negociacao' ? '#eab308' : (lead.statusLead === 'finalizado' ? '#ef4444' : '#eab308');
+                    let statusTexto = lead.statusLead === 'finalizado' ? 'Finalizado' : 'Em Negociação';
+                    let statusCor = lead.statusLead === 'finalizado' ? '#ef4444' : '#eab308';
                     statusLead = `<span style="color:${statusCor};">⚠️ ${statusTexto} por: ${lead.comprador}</span>`;
                     if (lead.statusLead !== 'finalizado') {
                         btnLiberar = `<button class="btn-action btn-release" data-id="${lead.id}" data-action="liberar">🔄 Liberar</button>`;
